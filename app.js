@@ -15,6 +15,20 @@ exec("sudo ip link set can0 up type can bitrate 500000", function(err, stdout, s
 
 var can = require('socketcan');
 var fs = require('fs');
+var express = require('express');
+var path = require('path');
+var bodyParser = require('body-parser');
+var dbConn = require('./mariadbDBConn');
+
+dbConn.firstTest().catch(
+   (errMsg) =>{
+      console.log(errMsg);
+   }
+);
+
+var httpApp = express();
+httpApp.use(bodyParser.json());
+httpApp.use(bodyParser.urlencoded({extended: true}));
 
 // Parse database
 var network = can.parseNetworkDescription("./node_modules/socketcan/samples/mycan_definition.kcd");
@@ -23,12 +37,53 @@ var db = new can.DatabaseService(channel, network.buses["FarmBUS"]);
 
 channel.start();
 
-// Register a listener to get any value changes
-// db_instr.messages["TankController"].signals["TankTemperature"].onChange(function(s) {
-//    console.log("Tank Temperature " + s.value);
-// });
+var house1Sensors = {
+   temperature1: 0,
+   temperature2: 0,
+   humidity1: "",
+   humidity2: "",
+};
+
+var house2Sensors = {
+   temperature1: 0,
+   temperature2: 0,
+   humidity1: "",
+   humidity2: "",
+};
+
 
 // Register a listener to get any value updates
-db.messages["TankController"].signals["TankTemperature"].onUpdate(function(s) {
-   console.log("Tank Temperature " + s.value);
+db.messages["House1Stat"].signals["temperature1"].onUpdate(function(s) {
+   house1Sensors.temperature1 = s.value;
+   console.log("House1 temp1: " + house1Sensors.temperature1);
 });
+db.messages["House1Stat"].signals["temperature2"].onUpdate(function(s) {
+   house1Sensors.temperature2 = s.value;
+   console.log("House1 temp2: " + house1Sensors.temperature2);
+});
+db.messages["House1Stat"].signals["humidity1"].onUpdate(function(s) {
+   house1Sensors.humidity1 = s.value;
+   console.log("House1 humid1: " + house1Sensors.humidity1);
+});
+db.messages["House1Stat"].signals["humidity2"].onUpdate(function(s) {
+   house1Sensors.humidity2 = s.value;
+   console.log("House1 humid2: " + house1Sensors.humidity2);
+});
+
+db.messages["House2Stat"].signals["temperature1"].onUpdate(function(s) {
+   house2Sensors.temperature1 = s.value;
+   console.log("House2 temp1: " + house2Sensors.temperature1);
+});
+db.messages["House2Stat"].signals["temperature2"].onUpdate(function(s) {
+   house2Sensors.temperature2 = s.value;
+   console.log("House2 temp2: " + house2Sensors.temperature2);
+});
+db.messages["House2Stat"].signals["humidity1"].onUpdate(function(s) {
+   house2Sensors.humidity1 = s.value;
+   console.log("House2 humid1: " + house2Sensors.humidity1);
+});
+db.messages["House2Stat"].signals["humidity2"].onUpdate(function(s) {
+   house2Sensors.humidity2 = s.value;
+   console.log("House2 humid2: " + house2Sensors.humidity2);
+});
+

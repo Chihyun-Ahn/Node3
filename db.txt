@@ -1,0 +1,57 @@
+<install mariadb on raspberry pi, and runs it>
+sudo apt-get install mariadb-server
+sudo mysql
+
+CREATE DATABASE farmData;
+USE farmData;
+
+CREATE TABLE House1(
+    num         	INT PRIMARY KEY AUTO_INCREMENT,
+    Time            TIMESTAMP DEFAULT NOW(),
+    tarTemp	        DECIMAL(4,1),
+    tempBand	    DECIMAL(3,1),
+    ventilPer	    DECIMAL(4,1),	
+    temp1	       	DECIMAL(4,1),
+    temp2	       	DECIMAL(4,1),
+    humid1       	DECIMAL(4,1),
+    humid2       	DECIMAL(4,1),
+    fanMode	        BIT(1),
+    fan1		    BIT(1),
+    fan2		    BIT(1),
+    fan3		    BIT(1),
+    doseMode	    BIT(1),
+    feed		    BIT(1),
+    water		    BIT(1),
+    alarm		    BIT(1)
+);
+
+CREATE TABLE House2(
+    num         	INT PRIMARY KEY AUTO_INCREMENT,
+    TIME            TIMESTAMP DEFAULT NOW(),
+    tarTemp	        DECIMAL(4,1),
+    tempBand	    DECIMAL(3,1),
+    ventilPer	    DECIMAL(4,1),	
+    temp1	       	DECIMAL(4,1),
+    temp2	       	DECIMAL(4,1),
+    humid1       	DECIMAL(4,1),
+    humid2       	DECIMAL(4,1),
+    fanMode	        BIT(1),
+    fan1		    BIT(1),
+    fan2		    BIT(1),
+    fan3		    BIT(1),
+    doseMode	    BIT(1),
+    feed		    BIT(1),
+    water		    BIT(1),
+    alarm		    BIT(1)
+);
+
+INSERT INTO House1(tarTemp, tempBand) 
+VALUES(
+    22.0, 3.0
+);
+
+SHOW tables;
+SHOW DATABASES;
+
+CREATE USER admin@localhost IDENTIFIED BY '1234';
+GRANT ALL PRIVILEGES ON farmData.* TO admin@localhost IDENTIFIED BY '1234';
