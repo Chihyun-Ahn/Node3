@@ -12,32 +12,8 @@ exec("sudo ip link set can0 up type can bitrate 500000", function(err, stdout, s
    }
 });
 
-
 var can = require('socketcan');
-var fs = require('fs');
-var express = require('express');
-var path = require('path');
-var bodyParser = require('body-parser');
 var net = require('net');
-var server = net.createServer(function(client){
-   console.log('Client connected');
-   client.on('data', function(data){
-      console.log('Client sent '+ data.toString());
-   });
-   client.on('end', function(){
-      console.log('Client disconnected');
-   });
-   client.write('Hello');
-});
-server.listen(8100, function(){
-   console.log('Server listening for connection on port 8100..')
-});
-
-var httpApp = express();
-httpApp.use(bodyParser.json());
-httpApp.use(bodyParser.urlencoded({extended: true}));
-
-httpApp.post();
 
 // Parse database
 var network = can.parseNetworkDescription("./node_modules/socketcan/samples/mycan_definition.kcd");
@@ -94,3 +70,27 @@ db.messages["House2Stat"].signals["humidity2"].onUpdate(function(s) {
    house2Sensors.humidity2 = s.value;
    console.log("House2 humid2: " + house2Sensors.humidity2);
 });
+
+// Set socket connection with server
+var client = net.connect({
+   port: 8100,
+   host: '223.194.33.55'
+}, function(){
+   console.log('Client connected');
+   client.write('Node3 client says: Hello.');
+});
+
+//Show server's message
+client.on('data', function(data){
+   console.log(data.toString());
+});
+
+client.on('end', function(){
+   console.log('Client disconnected');
+   client.end();
+});
+
+//Send sensor data to the server every 10 seconds
+setInterval(function(){
+   client.write(house1Sensors.toString());
+}, 1000);
