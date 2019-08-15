@@ -18,17 +18,26 @@ var fs = require('fs');
 var express = require('express');
 var path = require('path');
 var bodyParser = require('body-parser');
-var dbConn = require('./mariadbDBConn');
-
-dbConn.firstTest().catch(
-   (errMsg) =>{
-      console.log(errMsg);
-   }
-);
+var net = require('net');
+var server = net.createServer(function(client){
+   console.log('Client connected');
+   client.on('data', function(data){
+      console.log('Client sent '+ data.toString());
+   });
+   client.on('end', function(){
+      console.log('Client disconnected');
+   });
+   client.write('Hello');
+});
+server.listen(8100, function(){
+   console.log('Server listening for connection on port 8100..')
+});
 
 var httpApp = express();
 httpApp.use(bodyParser.json());
 httpApp.use(bodyParser.urlencoded({extended: true}));
+
+httpApp.post();
 
 // Parse database
 var network = can.parseNetworkDescription("./node_modules/socketcan/samples/mycan_definition.kcd");
@@ -50,7 +59,6 @@ var house2Sensors = {
    humidity1: "",
    humidity2: "",
 };
-
 
 // Register a listener to get any value updates
 db.messages["House1Stat"].signals["temperature1"].onUpdate(function(s) {
@@ -86,4 +94,3 @@ db.messages["House2Stat"].signals["humidity2"].onUpdate(function(s) {
    house2Sensors.humidity2 = s.value;
    console.log("House2 humid2: " + house2Sensors.humidity2);
 });
-
