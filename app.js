@@ -1,5 +1,4 @@
 var exec = require('child_process').exec;
-
 //Activate real canbus: can0
 exec("sudo ip link set can0 up type can bitrate 500000", function(err, stdout, stderr){
    console.log('Activating can0...');
@@ -13,7 +12,6 @@ exec("sudo ip link set can0 up type can bitrate 500000", function(err, stdout, s
 });
 
 var can = require('socketcan');
-var net = require('net');
 
 // Parse database
 var network = can.parseNetworkDescription("./node_modules/socketcan/samples/mycan_definition.kcd");
@@ -27,6 +25,7 @@ var house1Sensors = {
    temperature2: 0,
    humidity1: "",
    humidity2: "",
+   sigTime: ""
 };
 
 var house2Sensors = {
@@ -34,7 +33,12 @@ var house2Sensors = {
    temperature2: 0,
    humidity1: "",
    humidity2: "",
+   sigTime: ""
 };
+
+var farmInfo = [house1Sensors,house2Sensors];
+
+// var farmInfo = [house1Sensors, house2Sensors];
 
 // Register a listener to get any value updates
 db.messages["House1Stat"].signals["temperature1"].onUpdate(function(s) {
@@ -53,6 +57,10 @@ db.messages["House1Stat"].signals["humidity2"].onUpdate(function(s) {
    house1Sensors.humidity2 = s.value;
    console.log("House1 humid2: " + house1Sensors.humidity2);
 });
+db.messages["House1Stat"].signals["sigTime"].onUpdate(function(s) {
+   house1Sensors.sigTime = s.value;
+   console.log("House1 time: " + house1Sensors.sigTime);
+});
 
 db.messages["House2Stat"].signals["temperature1"].onUpdate(function(s) {
    house2Sensors.temperature1 = s.value;
@@ -70,27 +78,22 @@ db.messages["House2Stat"].signals["humidity2"].onUpdate(function(s) {
    house2Sensors.humidity2 = s.value;
    console.log("House2 humid2: " + house2Sensors.humidity2);
 });
-
-// Set socket connection with server
-var client = net.connect({
-   port: 8100,
-   host: '223.194.33.55'
-}, function(){
-   console.log('Client connected');
-   client.write('Node3 client says: Hello.');
+db.messages["House2Stat"].signals["sigTime"].onUpdate(function(s) {
+   house2Sensors.sigTime = s.value;
+   console.log("House2 time: " + house2Sensors.sigTime);
 });
 
-//Show server's message
-client.on('data', function(data){
-   console.log(data.toString());
+var socket = require('socket.io-client')('http://223.194.33.65:3000');
+
+socket.on('connect', function(){
+   console.log('socket connected.');
 });
 
-client.on('end', function(){
-   console.log('Client disconnected');
-   client.end();
+socket.on('giveMeData', ()=>{
+   console.log('farmInfo data is sent. current time: '+new Date());
+   socket.emit('farmInfo',farmInfo);
 });
 
-//Send sensor data to the server every 10 seconds
-setInterval(function(){
-   client.write(house1Sensors.toString());
-}, 1000);
+socket.on('controlData', (dataBean)=>{
+   console.log(dataBean.house[0].fan1);
+});
