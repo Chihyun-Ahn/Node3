@@ -37,7 +37,6 @@ var house2Sensors = {
 };
 
 var farmInfo = [house1Sensors,house2Sensors];
-
 // var farmInfo = [house1Sensors, house2Sensors];
 
 // Register a listener to get any value updates
@@ -95,5 +94,17 @@ socket.on('giveMeData', ()=>{
 });
 
 socket.on('controlData', (dataBean)=>{
-   console.log(dataBean.house[0].fan1);
+   // console.log(dataBean.house[0].fan1);
+   db.messages["House1Ctrl"].signals["fan1"].update(dataBean.house[0].fan1);
+   db.messages["House1Ctrl"].signals["fan2"].update(dataBean.house[0].fan2);
+   db.messages["House1Ctrl"].signals["fan3"].update(dataBean.house[0].fan3);
+   db.messages["House1Ctrl"].signals["water"].update(dataBean.house[0].water);
+   db.messages["House1Ctrl"].signals["alarm"].update(dataBean.house[0].alarm);
+   db.send("House1Ctrl");
+   db.messages["House2Ctrl"].signals["fan1"].update(dataBean.house[1].fan1);
+   db.messages["House2Ctrl"].signals["fan2"].update(dataBean.house[1].fan2);
+   db.messages["House2Ctrl"].signals["fan3"].update(dataBean.house[1].fan3);
+   db.messages["House2Ctrl"].signals["water"].update(dataBean.house[1].water);
+   db.messages["House2Ctrl"].signals["alarm"].update(dataBean.house[1].alarm);
+   db.send("House2Ctrl");
 });
