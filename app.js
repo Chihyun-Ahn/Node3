@@ -82,7 +82,7 @@ db.messages["House2Stat"].signals["sigTime"].onUpdate(function(s) {
    console.log("House2 time: " + house2Sensors.sigTime);
 });
 
-var socket = require('socket.io-client')('http://223.194.33.65:3000');
+var socket = require('socket.io-client')('http://223.194.33.87:3000');
 
 socket.on('connect', function(){
    console.log('socket connected.');
