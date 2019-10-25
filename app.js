@@ -94,7 +94,6 @@ socket.on('giveMeData', ()=>{
 });
 
 socket.on('controlData', (dataBean)=>{
-   // console.log(dataBean.house[0].fan1);
    db.messages["House1Ctrl"].signals["fan1"].update(dataBean.house[0].fan1);
    db.messages["House1Ctrl"].signals["fan2"].update(dataBean.house[0].fan2);
    db.messages["House1Ctrl"].signals["fan3"].update(dataBean.house[0].fan3);

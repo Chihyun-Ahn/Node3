@@ -1,0 +1,89 @@
+sudo apt-get install mariadb-server
+sudo apt-get purge mariadb-common
+sudo mysql -u root -p (enter twice)
+CREATE DATABASE farmData;
+use farmData;
+
+DROP TABLE house1;
+DROP TABLE house2;
+
+CREATE TABLE house1(
+    num         	INT PRIMARY KEY AUTO_INCREMENT,
+    curTime         TIMESTAMP DEFAULT NOW(),
+    msgTime         VARCHAR(20),
+    tarTemp	        DECIMAL(4,1),
+    tempBand	    DECIMAL(3,1),
+    ventilPer	    DECIMAL(4,1),
+    temp1	       	DECIMAL(4,1),
+    temp2	       	DECIMAL(4,1),
+    humid1       	DECIMAL(4,1),
+    humid2       	DECIMAL(4,1),
+    fanMode	        TINYINT(1),
+    fan1		    TINYINT(1),
+    fan2		    TINYINT(1),
+    fan3		    TINYINT(1),
+    waterMode	    TINYINT(1),
+    water		    TINYINT(1),
+    alarm		    TINYINT(1)
+);
+
+CREATE TABLE house2(
+    num         	INT PRIMARY KEY AUTO_INCREMENT,
+    curTime         TIMESTAMP DEFAULT NOW(),
+    msgTime         VARCHAR(20),
+    tarTemp	        DECIMAL(4,1),
+    tempBand	    DECIMAL(3,1),
+    ventilPer	    DECIMAL(4,1),	
+    temp1	       	DECIMAL(4,1),
+    temp2	       	DECIMAL(4,1),
+    humid1       	DECIMAL(4,1),
+    humid2       	DECIMAL(4,1),
+    fanMode	        TINYINT(1),
+    fan1		    TINYINT(1),
+    fan2		    TINYINT(1),
+    fan3		    TINYINT(1),
+    waterMode	    TINYINT(1),
+    water		    TINYINT(1),
+    alarm		    TINYINT(1)
+);
+
+
+INSERT INTO house1(tarTemp, tempBand) 
+VALUES(
+    22.0, 3.0
+);
+
+SHOW tables;
+SHOW DATABASES;
+
+CREATE USER admin@localhost IDENTIFIED BY '1234';
+GRANT ALL PRIVILEGES ON farmData.* TO admin@localhost IDENTIFIED BY '1234';
+
+SELECT * FROM house1 ORDER BY num LIMIT 1;
+
+DELETE FROM house1;
+ALTER TABLE house1 AUTO_INCREMENT=1;
+
+CREATE TABLE house3(
+    num         	INT PRIMARY KEY AUTO_INCREMENT,
+    curTime         TIMESTAMP DEFAULT NOW(),
+    msgTime         VARCHAR(20),
+    tarTemp	        DECIMAL(4,1),
+    tempBand	    DECIMAL(3,1),
+    ventilPer	    DECIMAL(4,1),	
+    temp1	       	DECIMAL(4,1),
+    temp2	       	DECIMAL(4,1),
+    humid1       	DECIMAL(4,1),
+    humid2       	DECIMAL(4,1),
+    fanMode	        TINYINT(1),
+    fan1		    TINYINT(1),
+    fan2		    TINYINT(1),
+    fan3		    TINYINT(1),
+    doseMode	    TINYINT(1),
+    feed		    TINYINT(1),
+    water		    TINYINT(1),
+    alarm		    TINYINT(1)
+);
+
+commit;
+

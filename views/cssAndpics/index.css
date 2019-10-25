@@ -1,0 +1,124 @@
+*{
+  box-sizing: border-box;
+}
+body{
+  margin: auto;
+  width: 80%;
+  background-color:white;
+}
+table{
+  width: 100%;
+}
+#headerLeft{
+  width: 50%;
+  text-align: left;
+}
+#headerRight{
+  width: 50%;
+  text-align: right;
+}
+#logo{
+  width: 30%;
+}
+#farmNetLogo{
+  width: 50%;
+}
+.container{
+  width: 100%;
+  margin: 0 auto; 
+}
+
+ul.tabs{
+  width: 100%;
+  margin: 0px;
+  padding: 0px;
+  list-style: none;
+  background-color: #000066;
+}
+ul.tabs li{
+  background: none;
+  color:white;
+  display: inline-block;
+  padding: 10px 15px;
+  cursor: pointer;
+}
+
+ul.tabs li.current{
+  background: #6699ff;
+  color: white;
+}
+
+.tab-content{
+  display:none;
+  /* padding: 15px; */
+}
+.tab-content.current{
+  display: inherit;
+}
+#nongjang{
+  width: 100%;
+}
+.nongjangTD{
+  padding: 2%;
+  height: 10%;
+  width: 30%;
+  text-align: center;
+}
+#nongjangNum{
+  padding: 5%;
+  height: 80%;
+  width: 80%;
+  border-radius: 20px;
+  background-color: #ffcc00;
+}
+#mainScreen{
+  width: 100%;
+}
+.mainValues{
+  padding: 2%;
+  width: 33%;
+  text-align: center;
+  border-radius: 20px;
+  background-color: #99ccff;
+}
+#controlsangtae{
+  width: 100%;
+  padding: 14px 16px;
+  text-align: center;
+  background-color: #000066;
+  color: white;
+}
+.controlElement{
+  width: 50%;
+  text-align: center;
+  background-color: #ccccff;
+  border-radius: 20px;
+}
+.controlTitle{
+  width: 30%;
+  text-align: center;
+  background-color: #ffcc00;
+  border-radius: 20px;
+}
+.controlPic{
+  width: 80%;
+}
+
+#waterPic{
+  width: 20%;
+}
+
+.switch{
+  width: 70%;
+}
+.switchPic{
+  width: 30%;
+  height: 10%;
+}
+
+@media only screen and (max-width:600px){
+  /* for mobile phone */
+  body{
+    width: 100%;
+  }
+}

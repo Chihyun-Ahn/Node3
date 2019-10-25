@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>FARM MANAGEMENT</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="index.css" >
+    <script>
+      var houseNum;
+      var switches = {fanMode: 0, fan1: 0, fan2: 0, fan3: 0, waterMode: 0, water:0, alarm: 0};
+      var pageSwitches = [switches, switches];
+      $(document).ready(function(){
+        $('ul.tabs li').click(function(){
+          var tab_id = $(this).attr('data-tab');
+          $('ul.tabs li').removeClass('current');
+          $('.tab-content').removeClass('current');
+          $(this).addClass('current');
+          $('#'+tab_id).addClass('current');
+        });
+        
+        $('#submitBtn').click(()=>{
+          alert('정보를 서버에 전달하였습니다. 메인 화면으로 이동합니다.');
+          $('#myForm').submit();
+        });
+        
+        setInterval(()=>{
+          houseNum = $('#nongjangNum').val();
+          var element1 = $('#fanPic1');
+          var element2 = $('#fanPic2');
+          var element3 = $('#fanPic3');
+          if(pageSwitches[houseNum-1].fan1 == 1){
+            rotateFan(element1, 2300);
+          }else{
+            rotateFan(element1, 0);
+          }
+          if(pageSwitches[houseNum-1].fan2 == 1){
+            rotateFan(element2, 2300);
+          }else{
+            rotateFan(element2, 0);
+          }
+          if(pageSwitches[houseNum-1].fan3 == 1){
+            rotateFan(element3, 2300);
+          }else{
+            rotateFan(element3, 0);
+          }
+        }, 2000);
+        function rotateFan(elem, dura){
+          var tmpAnimation = 0;
+          tmpAnimation = tmpAnimation - 359;
+          $({degrees: tmpAnimation + 359}).animate({degrees: tmpAnimation}, {
+            duration: dura,
+            step: function(now){
+              elem.css({
+                transform: 'rotate(' + now + 'deg)'
+              });
+            }
+          });
+        }
+        setInterval(()=>{
+          houseNum = $('#nongjangNum').val();
+          var element  = $('#waterPic');
+          if(pageSwitches[houseNum-1].water == 1){
+            moveDrop(element);
+          }
+        }, 2000);
+        function moveDrop(elem){
+          elem.animate({height: '25%'}, "slow");
+          elem.animate({height: '20%'}, "slow");
+        }
+        $('#fanSwitch').on({
+          'click': function(){
+            if(houseNum == 0){
+              console.log('동번호를 선택하세요.');
+            }else{
+              pageSwitches[houseNum-1].fanMode = pageSwitches[houseNum-1].fanMode + 1;
+              if(pageSwitches[houseNum-1].fanMode >1){
+                pageSwitches[houseNum-1].fanMode = 0;
+                $('#fanSwitch').attr('src', 'switchAuto.png');
+                console.log('현재 fanMode:'+pageSwitches[houseNum-1].fanMode);  
+              }else{
+                $('#fanSwitch').attr('src', 'switchManual.png');
+                console.log('현재 fanMode:'+pageSwitches[houseNum-1].fanMode);  
+              }
+            };
+          }
+        });
+        $('#fan1Switch').on({
+          'click': function(){
+            if(houseNum == 0){
+              console.log('동번호를 선택하세요.');
+            }else{
+              if(pageSwitches[houseNum-1].fanMode == 0){
+                console.log('자동모드를 해제하세요. ');
+              }else{
+                console.log('처음 fan1값:'+pageSwitches[houseNum-1].fan1);
+                pageSwitches[houseNum-1].fan1 = pageSwitches[houseNum-1].fan1 + 1;
+                if(pageSwitches[houseNum-1].fan1 >1){
+                  pageSwitches[houseNum-1].fan1 = 0;
+                  $('#fan1Switch').attr('src', 'switchManual.png');
+                  console.log('현재 fan1:'+pageSwitches[houseNum-1].fan1);  
+                }else{
+                  $('#fan1Switch').attr('src', 'switchAuto.png');
+                  console.log('현재 fan1:'+pageSwitches[houseNum-1].fan1);  
+                }
+              }
+            }
+          }
+        });
+        $('#fan2Switch').on({
+          'click': function(){
+            if(houseNum == 0){
+              console.log('동번호를 선택하세요.');
+            }else{
+              if(pageSwitches[houseNum-1].fanMode == 0){
+                console.log('자동모드를 해제하세요. ');
+              }else{
+                pageSwitches[houseNum-1].fan2 = pageSwitches[houseNum-1].fan2 + 1;
+                if(pageSwitches[houseNum-1].fan2 >1){
+                  pageSwitches[houseNum-1].fan2 = 0;
+                  $('#fan2Switch').attr('src', 'switchManual.png');
+                }else{
+                  $('#fan2Switch').attr('src', 'switchAuto.png');
+                }
+              }
+            }
+          }
+        });
+        $('#fan3Switch').on({
+          'click': function(){
+            if(houseNum == 0){
+              console.log('동번호를 선택하세요.');
+            }else{
+              if(pageSwitches[houseNum-1].fanMode == 0){
+                console.log('자동모드를 해제하세요. ');
+              }else{
+                pageSwitches[houseNum-1].fan3 = pageSwitches[houseNum-1].fan3 + 1;
+                if(pageSwitches[houseNum-1].fan3 >1){
+                  pageSwitches[houseNum-1].fan3 = 0;
+                  $('#fan3Switch').attr('src', 'switchManual.png');
+                }else{
+                  $('#fan3Switch').attr('src', 'switchAuto.png');
+                }
+              }
+            }
+          }
+        });
+        $('#waterSwitch').on({
+          'click': function(){
+            if(houseNum == 0){
+              console.log('동번호를 선택하세요.');
+            }else{
+              pageSwitches[houseNum-1].waterMode = pageSwitches[houseNum-1].waterMode + 1;
+              if(pageSwitches[houseNum-1].waterMode >1){
+                pageSwitches[houseNum-1].waterMode = 0;
+                $('#waterSwitch').attr('src', 'switchAuto.png');
+              }else{
+                $('#waterSwitch').attr('src', 'switchManual.png');
+              }
+            };
+          }
+        });
+        $('#waterOnOff').on({
+          'click': function(){
+            if(houseNum == 0){
+              console.log('동번호를 선택하세요.');
+            }else{
+              if(pageSwitches[houseNum-1].waterMode == 0){
+                console.log('분무기 제어하려면 자동모드를 해제하세요.');
+              }else{
+                pageSwitches[houseNum-1].water = pageSwitches[houseNum-1].water + 1;
+                if(pageSwitches[houseNum-1].water >1){
+                  pageSwitches[houseNum-1].water = 0;
+                  $('#waterOnOff').attr('src', 'switchAuto.png');
+                }else{
+                  $('#waterOnOff').attr('src', 'switchManual.png');
+                }
+              }
+            };
+          }
+        });
+        
+        var userData1 = pageSwitches[0];
+        var userData2 = pageSwitches[1];
+        var userData = {userData1: userData1, userData2: userData2};
+        console.log(userData1.fanMode);
+        setInterval(()=>{
+          $.post("http://223.194.33.91:5000/getData.do",{userData: userData},(dataBean)=>{
+            
+            if(houseNum == '0'){console.log('동번호를 선택하세요.');}else{
+              var avgTemp  = dataBean.house[houseNum-1].avgTemp;
+              var avgHumid = dataBean.house[houseNum-1].avgHumid;
+              var tarTemp = dataBean.house[houseNum-1].tarTemp;
+              var tempBand = dataBean.house[houseNum-1].tempBand;
+              var ventilPer = dataBean.house[houseNum-1].ventilPer;
+              
+              if(pageSwitches[houseNum-1].fanMode == 0){
+                pageSwitches[houseNum-1].fan1 = dataBean.house[houseNum-1].fan1;
+                pageSwitches[houseNum-1].fan2 = dataBean.house[houseNum-1].fan2;
+                pageSwitches[houseNum-1].fan3 = dataBean.house[houseNum-1].fan3;
+              }
+              $('#internalTemp').html('내부온도<br>'+avgTemp+'˚C');
+              $('#internalHumid').html('내부습도<br>'+avgHumid+'%');
+              $('#targetTemp').html('목표온도<br>'+tarTemp+'˚C');
+              $('#tempBand').html('설정편차<br>'+tempBand+'˚C');
+              $('#calcVentil').html('환기계산값<br>'+ventilPer+'%');
+              if(dataBean.house[houseNum-1].alarm == 1){
+                $('#alarm').html('고온경보<br>농장고온!!');
+              }else{
+                $('#alarm').html('고온경보<br>농장정상');
+              }
+            }
+          });
+        },4000);
+      });
+      // var userCtrl = {tarTemp: -1, tempBand: -1, calcVentil:-1,fanMode:-1,waterMode:-1,fan1:-1,fan2:-1,fan3:-1,water:-1};
+    </script>
+  </head>
+  <body>
+    <div id="wrap">
+      <table>
+        <tr>
+          <td id="headerLeft">
+            &nbsp;&nbsp;&nbsp;<img id="logo" src="KWUni.png">
+          </td>
+          <td id="headerRight">
+            <img id="farmNetLogo" src="farmnet.png">&nbsp;&nbsp;&nbsp;
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div class="container">
+      <ul class="tabs">
+        <li class="tab-link current" data-tab="tab-1">메인 화면</li>
+        <li class="tab-link" data-tab="tab-2">설정값</li>
+      </ul>
+    </div>
+    <div id="tab-1" class="tab-content current">
+      <div id='nongjang'>
+        <table>
+          <tr>
+            <td class="nongjangTD"></td>
+            <td class="nongjangTD"></td>
+            <td class="nongjangTD">
+              <select id="nongjangNum" name="nongjangNum">
+                <option value="0">동번호 선택</option>
+                <option value="1">1동</option>
+                <option value="2">2동</option>
+              </select>
+            </td>
+          </tr>  
+        </table>
+      </div>
+      <div id="mainScreen">
+        <table>
+          <tr>
+            <td id="targetTemp"class="mainValues">목표온도<br>-대기중-</td>
+            <td id="internalTemp" class="mainValues">내부온도<br>-대기중-</td>
+            <td id="tempBand" class="mainValues">설정편차<br>-대기중-</td>
+          </tr>
+          <tr>
+            <td id="internalHumid" class="mainValues">내부습도<br>-대기중-</td>
+            <td id="calcVentil" class="mainValues">환기 계산값<br>-대기중-</td>
+            <td id="alarm" class="mainValues">고온경보<br>-대기중-</td>
+          </tr>  
+        </table>
+        <table>
+          <tr>
+            <td id="controlsangtae" colspan="2">제어 상태</td>
+          </tr>
+          <tr>
+            <td class="controlElement">
+              <div>
+                <table>
+                  <tr>
+                    <td class="controlTitle">환기</td>
+                    <td class="switch">
+                      자동<img id="fanSwitch" class="switchPic" src="switchAuto.png">수동
+                    </td>
+                  </tr>
+                </table>
+              </div>
+              <table>
+                <tr>
+                  <td><img id="fanPic1" class="controlPic" src="fan.png"></td>
+                  <td><img id="fanPic2" class="controlPic" src="fan.png"></td>
+                  <td><img id="fanPic3" class="controlPic" src="fan.png"></td>
+                </tr>
+                <tr>
+                  <td>팬1</td><td>팬2</td><td>팬3</td>
+                </tr>
+                <tr>
+                  <td>ON<img id="fan1Switch" class="switchPic" src="switchAuto.png">OFF</td>
+                  <td>ON<img id="fan2Switch" class="switchPic" src="switchAuto.png">OFF</td>
+                  <td>ON<img id="fan3Switch" class="switchPic" src="switchAuto.png">OFF</td>
+                </tr>
+              </table>
+            </td>
+            <td class="controlElement">
+              <div>
+                <table>
+                  <tr>
+                    <td class="controlTitle">급수</td>
+                    <td class="switch">
+                      자동<img id="waterSwitch" class="switchPic" src="switchAuto.png">
+                      수동
+                    </td>  
+                  </tr>
+                </table>
+              </div>
+              <table>
+                <tr><td><img id="waterPic" src="drop.png"></td></tr>
+                <tr><td>급수</td></tr>
+                <tr><td>ON<img id="waterOnOff" class="switchPic" src="switchAuto.png">OFF</td></tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-2" class="tab-content">
+      <form action="/setData.do" method="post" id="myForm" name="myForm">
+          <fieldset>
+            <legend>1동 세팅값</legend>
+            <ol>
+              <li>
+                <label for="house1TarTemp">목표온도</label>
+                <input id="house1TarTemp" name="house1TarTemp" type="text">
+              </li>
+              <li>
+                <label for="house1TempBand">온도편차</label>
+                <input id="house1TempBand" name="house1TempBand" type="text">
+              </li>
+            </ol>
+          </fieldset>
+          <fieldset>
+            <legend>2동 세팅값</legend>
+            <ol>
+              <li>
+                <label for="house2TarTemp">목표온도</label>
+                <input id="house2TarTemp" name="house2TarTemp" type="text">
+              </li>
+              <li>
+                <label for="house2TempBand">온도편차</label>
+                <input id="house2TempBand" name="house2TempBand" type="text">
+              </li>
+            </ol>
+          </fieldset>
+        <button type="button" id="submitBtn">확인</button>
+      </form>
+    </div>
+ </body>
+</html>
