@@ -14,11 +14,13 @@ async function insertData(dataBean){
         conn = await pool.getConnection();
         conn.query('Use farmData');
         var sql1 = 'INSERT INTO house1(msgTime, tarTemp, tempBand, ventilPer, '+
-        'temp1, temp2, humid1, humid2, fanMode, fan1, fan2, fan3, waterMode, '+
-        'water, alarm) VALUES( ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+        'temp1, temp2, temp3, temp4, temp5, temp6, humid1, humid2, humid3, humid4, '+
+        'humid5, humid6, fanMode, fan1, fan2, fan3, waterMode, water, alarm) '+
+        'VALUES( ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
         var sql2 = 'INSERT INTO house2(msgTime, tarTemp, tempBand, ventilPer, '+
-        'temp1, temp2, humid1, humid2, fanMode, fan1, fan2, fan3, waterMode, '+
-        'water, alarm) VALUES( ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+        'temp1, temp2, temp3, temp4, temp5, temp6, humid1, humid2, humid3, humid4, '+
+        'humid5, humid6, fanMode, fan1, fan2, fan3, waterMode, water, alarm) '+
+        'VALUES( ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
         var sql = [sql1, sql2];
         for(i=0;i<2;i++){
             var convertedTime = "";
@@ -31,8 +33,12 @@ async function insertData(dataBean){
                 [
                     convertedTime,dataBean.house[i].tarTemp,
                     dataBean.house[i].tempBand,dataBean.house[i].ventilPer,
-                    dataBean.house[i].temp1, dataBean.house[i].temp2,
-                    dataBean.house[i].humid1,dataBean.house[i].humid2,
+                    dataBean.house[i].temp[0], dataBean.house[i].temp[1],
+                    dataBean.house[i].temp[2], dataBean.house[i].temp[3],
+                    dataBean.house[i].temp[4], dataBean.house[i].temp[5],
+                    dataBean.house[i].humid[0], dataBean.house[i].humid[1],
+                    dataBean.house[i].humid[2], dataBean.house[i].humid[3],
+                    dataBean.house[i].humid[4], dataBean.house[i].humid[5],
                     dataBean.house[i].fanMode,dataBean.house[i].fan1,
                     dataBean.house[i].fan2, dataBean.house[i].fan3,
                     dataBean.house[i].waterMode, dataBean.house[i].water,

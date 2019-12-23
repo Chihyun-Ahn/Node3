@@ -12,7 +12,6 @@ exec("sudo ip link set can0 up type can bitrate 500000", function(err, stdout, s
 });
 
 var can = require('socketcan');
-var socket = require('socket.io-client')('http://223.194.33.87:3000');
 
 // Parse database
 var network = can.parseNetworkDescription("./node_modules/socketcan/samples/mycan_definition.kcd");
@@ -21,159 +20,90 @@ var db = new can.DatabaseService(channel, network.buses["FarmBUS"]);
 
 channel.start();
 
-var house = [
-   {
-      temperature: [0,0,0,0,0,0],
-      humidity:["","","","","",""],
-      sigTime:["",""]
-   },
-   {
-      temperature: [0,0,0,0,0,0],
-      humidity:["","","","","",""],
-      sigTime:["",""]
-   }
-];
+var house1Sensors = {
+   temperature1: 0,
+   temperature2: 0,
+   humidity1: "",
+   humidity2: "",
+   sigTime: ""
+};
 
-// Listener for house1
-db.messages["House1Temp"].signals["temperature1"].onUpdate(function(s) {
-   house[0].temperature[0] = s.value;
-   console.log("House1 temp1: " + house[0].temperature[0]);
+var house2Sensors = {
+   temperature1: 0,
+   temperature2: 0,
+   humidity1: "",
+   humidity2: "",
+   sigTime: ""
+};
+
+var farmInfo = [house1Sensors,house2Sensors];
+// var farmInfo = [house1Sensors, house2Sensors];
+
+// Register a listener to get any value updates
+db.messages["House1Stat"].signals["temperature1"].onUpdate(function(s) {
+   house1Sensors.temperature1 = s.value;
+   console.log("House1 temp1: " + house1Sensors.temperature1);
 });
-db.messages["House1Temp"].signals["temperature2"].onUpdate(function(s) {
-   house[0].temperature[1] = s.value;
-   console.log("House1 temp2: " + house[0].temperature[1]);
+db.messages["House1Stat"].signals["temperature2"].onUpdate(function(s) {
+   house1Sensors.temperature2 = s.value;
+   console.log("House1 temp2: " + house1Sensors.temperature2);
 });
-db.messages["House1Temp"].signals["temperature3"].onUpdate(function(s) {
-   house[0].temperature[2] = s.value;
-   console.log("House1 temp3: " + house[0].temperature[2]);
+db.messages["House1Stat"].signals["humidity1"].onUpdate(function(s) {
+   house1Sensors.humidity1 = s.value;
+   console.log("House1 humid1: " + house1Sensors.humidity1);
 });
-db.messages["House1Temp"].signals["temperature4"].onUpdate(function(s) {
-   house[0].temperature[3] = s.value;
-   console.log("House1 temp4: " + house[0].temperature[3]);
+db.messages["House1Stat"].signals["humidity2"].onUpdate(function(s) {
+   house1Sensors.humidity2 = s.value;
+   console.log("House1 humid2: " + house1Sensors.humidity2);
 });
-db.messages["House1Temp"].signals["temperature5"].onUpdate(function(s) {
-   house[0].temperature[4] = s.value;
-   console.log("House1 temp5: " + house[0].temperature[4]);
-});
-db.messages["House1Temp"].signals["temperature6"].onUpdate(function(s) {
-   house[0].temperature[5] = s.value;
-   console.log("House1Stat2 temp3: " + house[0].temperature[5]);
-});
-db.messages["House1TempTime"].signals["sigTime"].onUpdate(function(s) {
-   house[0].sigTime[0] = s.value;
-   console.log("House1Temp sigTime: " + house[0].sigTime[0]);
+db.messages["House1Stat"].signals["sigTime"].onUpdate(function(s) {
+   house1Sensors.sigTime = s.value;
+   console.log("House1 time: " + house1Sensors.sigTime);
 });
 
-db.messages["House1Humid"].signals["humidity1"].onUpdate(function(s) {
-   house[0].humidity[0] = s.value;
-   console.log("House1 humid1: " + house[0].humidity[0]);
+db.messages["House2Stat"].signals["temperature1"].onUpdate(function(s) {
+   house2Sensors.temperature1 = s.value;
+   console.log("House2 temp1: " + house2Sensors.temperature1);
 });
-db.messages["House1Humid"].signals["humidity2"].onUpdate(function(s) {
-   house[0].humidity[1] = s.value;
-   console.log("House1 humid2: " + house[0].humidity[1]);
+db.messages["House2Stat"].signals["temperature2"].onUpdate(function(s) {
+   house2Sensors.temperature2 = s.value;
+   console.log("House2 temp2: " + house2Sensors.temperature2);
 });
-db.messages["House1Humid"].signals["humidity3"].onUpdate(function(s) {
-   house[0].humidity[2] = s.value;
-   console.log("House1 humid3: " + house[0].humidity[2]);
+db.messages["House2Stat"].signals["humidity1"].onUpdate(function(s) {
+   house2Sensors.humidity1 = s.value;
+   console.log("House2 humid1: " + house2Sensors.humidity1);
 });
-db.messages["House1Humid"].signals["humidity4"].onUpdate(function(s) {
-   house[0].humidity[3] = s.value;
-   console.log("House1 humid4: " + house[0].humidity[3]);
+db.messages["House2Stat"].signals["humidity2"].onUpdate(function(s) {
+   house2Sensors.humidity2 = s.value;
+   console.log("House2 humid2: " + house2Sensors.humidity2);
 });
-db.messages["House1Humid"].signals["humidity5"].onUpdate(function(s) {
-   house[0].humidity[4] = s.value;
-   console.log("House1 humid5: " + house[0].humidity[4]);
-});
-
-db.messages["House1Humid"].signals["humidity6"].onUpdate(function(s) {
-   house[0].humidity[5] = s.value;
-   console.log("House1 humid6: " + house[0].humidity[5]);
-});
-db.messages["House1HumidTime"].signals["sigTime"].onUpdate(function(s) {
-   house[0].sigTime[1] = s.value;
-   console.log("House1 Humid sigTime: " + house[0].sigTime[1]);
-});
-// Listener for house2
-db.messages["House2Temp"].signals["temperature1"].onUpdate(function(s) {
-   house[0].temperature[0] = s.value;
-   console.log("House2 temp1: " + house[0].temperature[0]);
-});
-db.messages["House2Temp"].signals["temperature2"].onUpdate(function(s) {
-   house[0].temperature[1] = s.value;
-   console.log("House2 temp2: " + house[0].temperature[1]);
-});
-db.messages["House2Temp"].signals["temperature3"].onUpdate(function(s) {
-   house[0].temperature[2] = s.value;
-   console.log("House2 temp3: " + house[0].temperature[2]);
-});
-db.messages["House2Temp"].signals["temperature4"].onUpdate(function(s) {
-   house[0].temperature[3] = s.value;
-   console.log("House2 temp4: " + house[0].temperature[3]);
-});
-db.messages["House2Temp"].signals["temperature5"].onUpdate(function(s) {
-   house[0].temperature[4] = s.value;
-   console.log("House2 temp5: " + house[0].temperature[4]);
-});
-db.messages["House2Temp"].signals["temperature6"].onUpdate(function(s) {
-   house[0].temperature[5] = s.value;
-   console.log("House2Stat2 temp3: " + house[0].temperature[5]);
-});
-db.messages["House2TempTime"].signals["sigTime"].onUpdate(function(s) {
-   house[0].sigTime[0] = s.value;
-   console.log("House2Temp sigTime: " + house[0].sigTime[0]);
+db.messages["House2Stat"].signals["sigTime"].onUpdate(function(s) {
+   house2Sensors.sigTime = s.value;
+   console.log("House2 time: " + house2Sensors.sigTime);
 });
 
-db.messages["House2Humid"].signals["humidity1"].onUpdate(function(s) {
-   house[0].humidity[0] = s.value;
-   console.log("House2 humid1: " + house[0].humidity[0]);
-});
-db.messages["House2Humid"].signals["humidity2"].onUpdate(function(s) {
-   house[0].humidity[1] = s.value;
-   console.log("House2 humid2: " + house[0].humidity[1]);
-});
-db.messages["House2Humid"].signals["humidity3"].onUpdate(function(s) {
-   house[0].humidity[2] = s.value;
-   console.log("House2 humid3: " + house[0].humidity[2]);
-});
-db.messages["House2Humid"].signals["humidity4"].onUpdate(function(s) {
-   house[0].humidity[3] = s.value;
-   console.log("House2 humid4: " + house[0].humidity[3]);
-});
-db.messages["House2Humid"].signals["humidity5"].onUpdate(function(s) {
-   house[0].humidity[4] = s.value;
-   console.log("House2 humid5: " + house[0].humidity[4]);
-});
-
-db.messages["House2Humid"].signals["humidity6"].onUpdate(function(s) {
-   house[0].humidity[5] = s.value;
-   console.log("House2 humid6: " + house[0].humidity[5]);
-});
-db.messages["House2HumidTime"].signals["sigTime"].onUpdate(function(s) {
-   house[0].sigTime[1] = s.value;
-   console.log("House2 Humid sigTime: " + house[0].sigTime[1]);
-   console.log("house1, 2 data is sent to socket connection.");
-   socket.emit('house',house);
-});
+var socket = require('socket.io-client')('http://223.194.33.65:3000');
 
 socket.on('connect', function(){
    console.log('socket connected.');
 });
 
-// socket.on('giveMeData', ()=>{
-//    console.log('farmInfo data is sent. current time: '+new Date());
-//    socket.emit('house',house);
-// });
+socket.on('giveMeData', ()=>{
+   console.log('farmInfo data is sent. current time: '+new Date());
+   socket.emit('farmInfo',farmInfo);
+});
 
 socket.on('controlData', (dataBean)=>{
-   db.messages["House1Ctrl"].signals["fan1"].update(dataBean.house[0].fan[0]);
-   db.messages["House1Ctrl"].signals["fan2"].update(dataBean.house[0].fan[1]);
-   db.messages["House1Ctrl"].signals["fan3"].update(dataBean.house[0].fan[2]);
+   // console.log(dataBean.house[0].fan1);
+   db.messages["House1Ctrl"].signals["fan1"].update(dataBean.house[0].fan1);
+   db.messages["House1Ctrl"].signals["fan2"].update(dataBean.house[0].fan2);
+   db.messages["House1Ctrl"].signals["fan3"].update(dataBean.house[0].fan3);
    db.messages["House1Ctrl"].signals["water"].update(dataBean.house[0].water);
    db.messages["House1Ctrl"].signals["alarm"].update(dataBean.house[0].alarm);
    db.send("House1Ctrl");
-   db.messages["House2Ctrl"].signals["fan1"].update(dataBean.house[1].fan[0]);
-   db.messages["House2Ctrl"].signals["fan2"].update(dataBean.house[1].fan[1]);
-   db.messages["House2Ctrl"].signals["fan3"].update(dataBean.house[1].fan[2]);
+   db.messages["House2Ctrl"].signals["fan1"].update(dataBean.house[1].fan1);
+   db.messages["House2Ctrl"].signals["fan2"].update(dataBean.house[1].fan2);
+   db.messages["House2Ctrl"].signals["fan3"].update(dataBean.house[1].fan3);
    db.messages["House2Ctrl"].signals["water"].update(dataBean.house[1].water);
    db.messages["House2Ctrl"].signals["alarm"].update(dataBean.house[1].alarm);
    db.send("House2Ctrl");
