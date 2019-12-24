@@ -187,13 +187,13 @@ function getSensorData(houseName){
     }
 }
 
- db.messages["House1msgTime"].signals["sigTime"].onUpdate(function(s) {
+ db.messages["House1MsgTime"].signals["sigTime"].onUpdate(function(s) {
     dataBean.house[0].msgTime = s.value;
     console.log("House1 msgTime: " + dataBean.house[0].msgTime);
  });
  
 
- db.messages["House2msgTime"].signals["sigTime"].onUpdate(function(s) {
+ db.messages["House2MsgTime"].signals["sigTime"].onUpdate(function(s) {
     dataBean.house[1].msgTime = s.value;
     console.log("House2 msgTime: " + dataBean.house[1].msgTime);
  });
