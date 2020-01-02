@@ -4,7 +4,10 @@ var path = require('path');
 var bodyParser = require('body-parser');
 var app = express();
 var dbConn = require('./mariadbConn');
+var timeConv = require('./timeConvert');
 const portNum = 5000;
+var edgeDeadTimer = [0,0];
+var sendProbe = [0,0];
 
 //전역 변수로 데이터빈 객체 사용
 var dataBean = require('./dataBean');
@@ -35,80 +38,90 @@ const LOW = 0;
 //소켓캔 채널 스타트
 channel.start();
 
-//여기까지는,,, 농장의 정보를 받아서 온도, 습도 정보를 houseSensor라는 객체에 저장을 했다. 
 
-//기본 센서 수치를 받았으니, 이제,,
-//매 10초마다 센서수치에 기반하여 제어 정보 계산
-setInterval(()=>{
-    getSensorData("House1");
-    getSensorData("House2");
-    var i,j;
-    for(i=0;i<2;i++){
-        var tempSum, humiSum, imsi1, imsi2, imsi3;
-        tempSum = humiSum = 0;
-        for(j=0;j<sensorCount;j++){
-            tempSum += dataBean.house[i].temp[j];
-            humiSum += dataBean.house[i].humid[j];
+// CAN리스너에서, 메세지를 받을 때마다, 호출할 메인 함수. 
+function edgeMain(houseName){
+
+    // CAN메세지의 데이터를 데이터빈에 저장. 
+    getSensorData(houseName);
+    var houseNum = houseName[5] - 1; //1동은 0, 2동은 1.
+    var i;
+    var tempSum, humiSum, imsi1, imsi2, imsi3;
+    tempSum = humiSum = 0;
+
+    // 온도, 습도 총합 계산.
+    for(i=0;i<sensorCount;i++){
+        tempSum += dataBean.house[houseNum].temp[i];
+        humiSum += dataBean.house[houseNum].humid[i];
+    }
+
+    //평균 온,습도 계산 후 데이터빈 저장
+    dataBean.house[houseNum].avgTemp = Math.round((tempSum)/sensorCount);
+    dataBean.house[houseNum].avgHumid = Math.round((humiSum)/sensorCount);
+    console.log(houseNum+'동 평균온도:'+dataBean.house[houseNum].avgTemp+'평균습도:'+dataBean.house[houseNum].avgHumid);
+
+    //환기량 계산 후 데이터빈 저장
+    imsi1 = dataBean.house[houseNum].avgTemp;
+    imsi2 = dataBean.house[houseNum].tarTemp;
+    imsi3 = dataBean.house[houseNum].tempBand;
+    dataBean.house[houseNum].ventilPer = Math.round(((imsi1-imsi2)/imsi3)*100);
+
+    //환기량 기반하여 고온알람 저장
+    if(dataBean.house[houseNum].ventilPer > 120){
+        dataBean.house[houseNum].alarm = HIGH;
+    }
+
+    //계산된 환기량에 근거, 팬 제어값 저장
+    if(dataBean.house[houseNum].fanMode == 0){
+        if(dataBean.house[houseNum].ventilPer < 33){
+            dataBean.house[houseNum].fan1 = HIGH;
+            dataBean.house[houseNum].fan2 = LOW;
+            dataBean.house[houseNum].fan3 = LOW;
+        }else if(dataBean.house[houseNum].ventilPer >= 33 && dataBean.house[houseNum].ventilPer < 66){
+            dataBean.house[houseNum].fan1 = HIGH;
+            dataBean.house[houseNum].fan2 = HIGH;
+            dataBean.house[houseNum].fan3 = LOW;
+        }else if(dataBean.house[houseNum].ventilPer >= 66){
+            dataBean.house[houseNum].fan1 = HIGH;
+            dataBean.house[houseNum].fan2 = HIGH;
+            dataBean.house[houseNum].fan3 = HIGH;
         }
-        //평균 온,습도 계산 후 데이터빈 저장
-        dataBean.house[i].avgTemp = Math.round((tempSum)/sensorCount);
-        dataBean.house[i].avgHumid = Math.round((humiSum)/sensorCount);
-        console.log(i+'동 평균온도:'+dataBean.house[i].avgTemp+'평균습도:'+dataBean.house[i].avgHumid);
-        //환기량 계산 후 데이터빈 저장
-        imsi1 = dataBean.house[i].avgTemp;
-        imsi2 = dataBean.house[i].tarTemp;
-        imsi3 = dataBean.house[i].tempBand;
-        dataBean.house[i].ventilPer = Math.round(((imsi1-imsi2)/imsi3)*100);
-        //환기량 기반하여 고온알람 저장
-        if(dataBean.house[i].ventilPer > 120){
-            dataBean.house[i].alarm = HIGH;
-        }
-        //계산된 환기량에 근거, 팬 제어값 저장
-        if(dataBean.house[i].fanMode == 0){
-            if(dataBean.house[i].ventilPer < 33){
-                dataBean.house[i].fan1 = HIGH;
-                dataBean.house[i].fan2 = LOW;
-                dataBean.house[i].fan3 = LOW;
-            }else if(dataBean.house[i].ventilPer >= 33 && dataBean.house[i].ventilPer < 66){
-                dataBean.house[i].fan1 = HIGH;
-                dataBean.house[i].fan2 = HIGH;
-                dataBean.house[i].fan3 = LOW;
-            }else if(dataBean.house[i].ventilPer >= 66){
-                dataBean.house[i].fan1 = HIGH;
-                dataBean.house[i].fan2 = HIGH;
-                dataBean.house[i].fan3 = HIGH;
-            }
-        };
-        //습도에 따른 가습기 제어
-        if(dataBean.house[i].waterMode == 0){
-            if(dataBean.house[i].avgHumid < 50){
-                dataBean.house[i].water = HIGH;
-            }else if(dataBean.house[i].avgHumid > 70){
-                dataBean.house[i].water = LOW;
-            }
+    };
+    //습도에 따른 가습기 제어
+    if(dataBean.house[houseNum].waterMode == 0){
+        if(dataBean.house[houseNum].avgHumid < 50){
+            dataBean.house[houseNum].water = HIGH;
+        }else if(dataBean.house[houseNum].avgHumid > 70){
+            dataBean.house[houseNum].water = LOW;
         }
     }
+
     console.log('제어 정보 갱신됨.데이터빈을 로컬DB에 저장합니다.');
     dbConn.insertData(dataBean).catch(
         (err) =>{
             console.log(err);
         }
     );
+
     //제어 데이터를 농장 각 동으로 전송
-    db.messages["House1Ctrl"].signals["fan1"].update(dataBean.house[0].fan1);
-    db.messages["House1Ctrl"].signals["fan2"].update(dataBean.house[0].fan2);
-    db.messages["House1Ctrl"].signals["fan3"].update(dataBean.house[0].fan3);
-    db.messages["House1Ctrl"].signals["water"].update(dataBean.house[0].water);
-    db.messages["House1Ctrl"].signals["alarm"].update(dataBean.house[0].alarm);
-    db.send("House1Ctrl");
-    db.messages["House2Ctrl"].signals["fan1"].update(dataBean.house[1].fan1);
-    db.messages["House2Ctrl"].signals["fan2"].update(dataBean.house[1].fan2);
-    db.messages["House2Ctrl"].signals["fan3"].update(dataBean.house[1].fan3);
-    db.messages["House2Ctrl"].signals["water"].update(dataBean.house[1].water);
-    db.messages["House2Ctrl"].signals["alarm"].update(dataBean.house[1].alarm);
-    db.send("House2Ctrl");
-    console.log('제어 정보 매 동에 전송 완료');
-},10000);
+    if(houseName=="House1"){
+        db.messages["House1Ctrl"].signals["fan1"].update(dataBean.house[0].fan1);
+        db.messages["House1Ctrl"].signals["fan2"].update(dataBean.house[0].fan2);
+        db.messages["House1Ctrl"].signals["fan3"].update(dataBean.house[0].fan3);
+        db.messages["House1Ctrl"].signals["water"].update(dataBean.house[0].water);
+        db.messages["House1Ctrl"].signals["alarm"].update(dataBean.house[0].alarm);
+        db.send("House1Ctrl");
+        console.log('1동 제어 정보 매 동에 전송 완료');
+    }else if("House2"){
+        db.messages["House2Ctrl"].signals["fan1"].update(dataBean.house[1].fan1);
+        db.messages["House2Ctrl"].signals["fan2"].update(dataBean.house[1].fan2);
+        db.messages["House2Ctrl"].signals["fan3"].update(dataBean.house[1].fan3);
+        db.messages["House2Ctrl"].signals["water"].update(dataBean.house[1].water);
+        db.messages["House2Ctrl"].signals["alarm"].update(dataBean.house[1].alarm);
+        db.send("House2Ctrl");
+        console.log('2동 제어 정보 매 동에 전송 완료');
+    }
+};
 
 //이제 웹서버 부분
 //웹서버... json사용 및 인코딩... css파일 폴더 등록
@@ -177,27 +190,76 @@ function getSensorData(houseName){
     var houseHumid = houseName + "Humid";
     var tempera = "temperature";
     var humi = "humidity";
+    var houseMsgTime = houseName + "MsgTime";
     var houseNum = houseName[5]*1 - 1; //하우스 동번호. 형변환
     var i;
+    dataBean.house[houseNum].msgTime[0] = db.messages[houseMsgTime].signals["sigTime"].value; // edge에서 메세지 전송 시간
+    dataBean.house[houseNum].msgTime[1] = timeConv.getTimeNow(); // fog에서 수신시 시간
     for(i=0;i<sensorCount;i++){
         var senNum = i+1;
-        dataBean.house[houseNum].temp[i] = db.messages[houseTemp].signals[tempera+senNum].value;
-        dataBean.house[houseNum].humid[i] = db.messages[houseHumid].signals[humi+senNum].value;
+        dataBean.house[houseNum].temp[i] = db.messages[houseTemp].signals[tempera+senNum].value; 
+        dataBean.house[houseNum].humid[i] = db.messages[houseHumid].signals[humi+senNum].value; 
         console.log(houseName+" "+tempera+senNum+": "+dataBean.house[houseNum].temp[i]+" | "+humi+senNum+": "+dataBean.house[houseNum].humid[i]);
     }
 }
 
+//CAN메세지 리스너. 1동(Edge 1)
  db.messages["House1MsgTime"].signals["sigTime"].onUpdate(function(s) {
-    dataBean.house[0].msgTime = s.value;
-    console.log("House1 msgTime: " + dataBean.house[0].msgTime);
+    clearTimeout(edgeDeadTimer[0]);
+    console.log('edgeDeadTimer[0] is reset.');
+    setEdgeDeadTimer('House1');
+    edgeMain("House1");
  });
  
-
+//CAN메세지 리스너. 2동(Edge 2)
  db.messages["House2MsgTime"].signals["sigTime"].onUpdate(function(s) {
-    dataBean.house[1].msgTime = s.value;
-    console.log("House2 msgTime: " + dataBean.house[1].msgTime);
+    clearTimeout(edgeDeadTimer[1]);
+    console.log('edgeDeadTimer[1] is reset.');
+    setEdgeDeadTimer('House2');
+    edgeMain("House2");
  });
 
+setEdgeDeadTimer('House1');
+setEdgeDeadTimer('House2');
 
+function setEdgeDeadTimer(houseName){
+    var houseNum = houseName[5] - 1;
+    var i = 1;
+    var msgID;
+    if(houseNum == 0){
+        msgID = 'AliveCheckH1ByFog';
+    }else if(houseNum == 1){
+        msgID = 'AliveCheckH2ByFog';
+    }
+    edgeDeadTimer[houseNum] = setTimeout(function(){
+        console.log('!!WARNING! '+houseName+' is not responding for 30s.');
+        console.log('msgID: '+msgID);
+        db.send(msgID);
+        console.log('Probe'+i+'has been sent.');
+        sendProbe[houseNum] = setInterval(function(){
+            i++;
+            if(i<=3){
+                db.send(msgID);
+                console.log('Probe '+i+'has been sent.');
+            }else if(i>3){
+                clearInterval(sendProbe);
+                dataBean.house[houseNum].state = 0; // 해당 하우스는 dead상태. 데이터빈에 저장. 
+                console.log(houseName+' is dead!! Databean state value has been changed to dead.');
+            }
+        }, 10000)
+    }, 30000);
+}
 
+db.messages['AliveAnsToFogByH1'].signals['nodeID'].onUpdate(function(){
+    clearInterval(sendProbe[0]);
+    setEdgeDeadTimer('House1');
+    dataBean.house[0].state = 1;
+    console.log('Edge1 is recovered. Databean state value is alive.');
+});
  
+db.messages['AliveAnsToFogByH2'].signals['nodeID'].onUpdate(function(){
+    clearInterval(sendProbe[1]);
+    setEdgeDeadTimer('House2');
+    dataBean.house[1].state = 1;
+    console.log('Edge2 is recovered. Databean state value is alive.');
+});

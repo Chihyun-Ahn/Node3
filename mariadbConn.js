@@ -31,16 +31,16 @@ async function insertData(dataBean){
             }
             conn.query(sql[i],
                 [
-                    convertedTime,dataBean.house[i].tarTemp,
-                    dataBean.house[i].tempBand,dataBean.house[i].ventilPer,
+                    convertedTime, dataBean.house[i].tarTemp,
+                    dataBean.house[i].tempBand, dataBean.house[i].ventilPer,
                     dataBean.house[i].temp[0], dataBean.house[i].temp[1],
                     dataBean.house[i].temp[2], dataBean.house[i].temp[3],
                     dataBean.house[i].temp[4], dataBean.house[i].temp[5],
                     dataBean.house[i].humid[0], dataBean.house[i].humid[1],
                     dataBean.house[i].humid[2], dataBean.house[i].humid[3],
                     dataBean.house[i].humid[4], dataBean.house[i].humid[5],
-                    dataBean.house[i].fanMode,dataBean.house[i].fan1,
-                    dataBean.house[i].fan2, dataBean.house[i].fan3,
+                    dataBean.house[i].fanMode, dataBean.house[i].fan[0],
+                    dataBean.house[i].fan[1], dataBean.house[i].fan[2],
                     dataBean.house[i].waterMode, dataBean.house[i].water,
                     dataBean.house[i].alarm
                 ]);
