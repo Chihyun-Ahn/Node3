@@ -34,6 +34,8 @@ var channel = can.createRawChannel("can0");
 var db = new can.DatabaseService(channel, network.buses["FarmBUS"]);
 const HIGH = 1;
 const LOW = 0;
+var commState = [HIGH, HIGH, HIGH];
+//commState[0]: H1Fog, [1]: H2Fog, [2]: H1H2
 
 //소켓캔 채널 스타트
 channel.start();
@@ -224,27 +226,35 @@ setEdgeDeadTimer('House2');
 
 function setEdgeDeadTimer(houseName){
     var houseNum = houseName[5] - 1;
+    // var neighbor;
+    // if(houseNum == 0){neighbor = 1}else if(houseNum == 1){neighbor = 0}
     var i = 1;
-    var msgID;
+    var aliveCheck, houseAskingByFog;
     if(houseNum == 0){
-        msgID = 'AliveCheckH1ByFog';
+        aliveCheck = 'AliveCheckH1ByFog';
+        houseAskingByFog = 'H1AskingByFog';
     }else if(houseNum == 1){
-        msgID = 'AliveCheckH2ByFog';
+        aliveCheck = 'AliveCheckH2ByFog';
+        houseAskingByFog = 'H2AskingByFog';
     }
     edgeDeadTimer[houseNum] = setTimeout(function(){
         console.log('!!WARNING! '+houseName+' is not responding for 30s.');
-        console.log('msgID: '+msgID);
-        db.send(msgID);
+        console.log('aliveCheck message: '+aliveCheck);
+        db.send(aliveCheck);
         console.log('Probe'+i+'has been sent.');
         sendProbe[houseNum] = setInterval(function(){
             i++;
             if(i<=3){
-                db.send(msgID);
+                db.send(aliveCheck);
                 console.log('Probe '+i+'has been sent.');
-            }else if(i>3){
-                clearInterval(sendProbe);
-                dataBean.house[houseNum].state = 0; // 해당 하우스는 dead상태. 데이터빈에 저장. 
-                console.log(houseName+' is dead!! Databean state value has been changed to dead.');
+            }else if(i>3 && i<6){
+                commState[houseNum] = LOW; // House -- Fog comm. LOW. 
+                db.send(houseAskingByFog);
+                console.log('House'+(houseNum+1)+' not responding. Probe '+(i-3)+' is sent to the neighbor.');
+            }else if(i>=6){
+                commState[0] = LOW;
+                commState[1] = LOW;
+                clearInterval(sendProbe[houseNum]);
             }
         }, 10000)
     }, 30000);
@@ -263,3 +273,18 @@ db.messages['AliveAnsToFogByH2'].signals['nodeID'].onUpdate(function(){
     dataBean.house[1].state = 1;
     console.log('Edge2 is recovered. Databean state value is alive.');
 });
+
+db.messages['H1StateByH2'].signals['state'].onUpdate(function(s){
+    var stateWord = (s)?'fine':'in failure'
+    console.log('Neighbor report: house1 state is '+stateWord+'. state value saved to commState.H1H2');
+    clearInterval(sendProbe[0]);
+    commState[2] = s;
+});
+
+db.messages['H2StateByH1'].signals['state'].onUpdate(function(s){
+    var stateWord = (s)?'fine':'in failure'
+    console.log('Neighbor report: house2 state is '+stateWord+'. state value saved to commState.H1H2');
+    clearInterval(sendProbe[1]);
+    commState[2] = s;
+});
+
