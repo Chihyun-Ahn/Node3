@@ -48,6 +48,7 @@ function edgeMain(houseName){
     getSensorData(houseName);
     var houseNum = houseName[5] - 1; //1동은 0, 2동은 1.
     var i;
+
     var tempSum, humiSum, imsi1, imsi2, imsi3;
     tempSum = humiSum = 0;
 
@@ -114,7 +115,7 @@ function edgeMain(houseName){
         db.messages["House1Ctrl"].signals["alarm"].update(dataBean.house[0].alarm);
         db.send("House1Ctrl");
         console.log('1동 제어 정보 매 동에 전송 완료');
-    }else if("House2"){
+    }else if(houseName=="House2"){
         db.messages["House2Ctrl"].signals["fan1"].update(dataBean.house[1].fan1);
         db.messages["House2Ctrl"].signals["fan2"].update(dataBean.house[1].fan2);
         db.messages["House2Ctrl"].signals["fan3"].update(dataBean.house[1].fan3);
@@ -252,6 +253,7 @@ function setEdgeDeadTimer(houseName){
                 db.send(houseAskingByFog);
                 console.log('House'+(houseNum+1)+' not responding. Probe '+(i-3)+' is sent to the neighbor.');
             }else if(i>=6){
+                console.log('House'+(houseNum+1)+' and neighbor are both dead. State is changed to LOW.');
                 commState[0] = LOW;
                 commState[1] = LOW;
                 clearInterval(sendProbe[houseNum]);
@@ -275,16 +277,29 @@ db.messages['AliveAnsToFogByH2'].signals['nodeID'].onUpdate(function(){
 });
 
 db.messages['H1StateByH2'].signals['state'].onUpdate(function(s){
-    var stateWord = (s)?'fine':'in failure'
+    var stateWord = (s.value)?'fine':'in failure'
     console.log('Neighbor report: house1 state is '+stateWord+'. state value saved to commState.H1H2');
     clearInterval(sendProbe[0]);
-    commState[2] = s;
+    commState[2] = s.value;
 });
 
 db.messages['H2StateByH1'].signals['state'].onUpdate(function(s){
-    var stateWord = (s)?'fine':'in failure'
+    var stateWord = (s.value)?'fine':'in failure'
     console.log('Neighbor report: house2 state is '+stateWord+'. state value saved to commState.H1H2');
     clearInterval(sendProbe[1]);
-    commState[2] = s;
+    commState[2] = s.value;
 });
 
+db.messages['H1AskingByH2'].signals['nodeID'].onUpdate(function(){
+    commState[2] = LOW;
+    db.messages['H1StateByFog'].signals['state'].update(commState[0]);
+    console.log('H1StateByFog>>state>>commState[0]: '+ commState[0]);
+    db.send('H1StateByFog');
+});
+
+db.messages['H2AskingByH1'].signals['nodeID'].onUpdate(function(){
+    commState[2] = LOW;
+    db.messages['H2StateByFog'].signals['state'].update(commState[1]);
+    console.log('H2StateByFog>>state>>commState[1]: '+ commState[1]);
+    db.send('H2StateByFog');
+});

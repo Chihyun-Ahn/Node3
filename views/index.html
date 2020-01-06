@@ -9,6 +9,7 @@
       var houseNum;
       var switches = {fanMode: 0, fan1: 0, fan2: 0, fan3: 0, waterMode: 0, water:0, alarm: 0};
       var pageSwitches = [switches, switches];
+      var serverAddress = 'http://223.194.33.67:10004';
       $(document).ready(function(){
         $('ul.tabs li').click(function(){
           var tab_id = $(this).attr('data-tab');
@@ -184,7 +185,7 @@
         var userData = {userData1: userData1, userData2: userData2};
         console.log(userData1.fanMode);
         setInterval(()=>{
-          $.post("http://223.194.33.91:5000/getData.do",{userData: userData},(dataBean)=>{
+          $.post(serverAddress+'/getData.do',{userData: userData},(dataBean)=>{
             
             if(houseNum == '0'){console.log('동번호를 선택하세요.');}else{
               var avgTemp  = dataBean.house[houseNum-1].avgTemp;
