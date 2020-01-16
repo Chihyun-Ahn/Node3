@@ -1,5 +1,6 @@
 // 웹서버를 구현을 위한 라이브러리 및 변수 설정
 var express = require('express');
+var cors = require('cors');
 var path = require('path');
 var bodyParser = require('body-parser');
 var app = express();
@@ -8,6 +9,7 @@ var timeConv = require('./timeConvert');
 const portNum = 5000;
 var edgeDeadTimer = [0,0];
 var sendProbe = [0,0];
+var cloudAddress = 'http://223.194.33.67:10004';
 
 //전역 변수로 데이터빈 객체 사용
 var dataBean = require('./dataBean');
@@ -131,11 +133,29 @@ function edgeMain(houseName){
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static('views/cssAndpics'));
+app.use(cors());
 
 //사용자 요청 처리(최소 접속)
 app.get('/', function(req,res){
     console.log("Get request arrived. index.html is sent.");
     res.sendFile(path.join(__dirname,'views','index.html'));
+});
+
+app.get('/redirecttorealdata.do', function(req, res){
+    console.log('==============================');
+    console.log('Redirecting to the realdata.do');
+    console.log('==============================');
+    console.log('req.query.id: '+req.query.id);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.redirect('/realdata.do');
+    // res.sendFile(path.join(__dirname,'views','realtimepage.html'));
+});
+
+app.get('/realdata.do', function(req, res){
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    console.log('Entered /realdata.do');
+    console.log('/realdata.do: '+req.query.user);
+    res.sendFile(path.join(__dirname,'views','realtimepage.html'));
 });
 
 //사용자가 getData.do 요청을 보내면, 응답으로 데이터빈을 보냄. 
