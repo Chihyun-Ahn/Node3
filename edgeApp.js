@@ -7,9 +7,15 @@ var app = express();
 var dbConn = require('./mariadbConn');
 var timeConv = require('./timeConvert');
 const portNum = 5000;
+const socketPort = 7000;
 var edgeDeadTimer = [0,0];
 var sendProbe = [0,0];
 var cloudAddress = 'http://223.194.33.67:10004';
+
+//소켓 만들기
+var http = require('http').Server(app);
+var io = require('socket.io')(http);
+var socketGlobal = 'none';
 
 //전역 변수로 데이터빈 객체 사용
 var dataBean = require('./dataBean');
@@ -37,6 +43,7 @@ var db = new can.DatabaseService(channel, network.buses["FarmBUS"]);
 const HIGH = 1;
 const LOW = 0;
 var commState = [HIGH, HIGH, HIGH];
+var currentUser = 'none';
 //commState[0]: H1Fog, [1]: H2Fog, [2]: H1H2
 
 //소켓캔 채널 스타트
@@ -52,17 +59,17 @@ function edgeMain(houseName){
     var i;
 
     var tempSum, humiSum, imsi1, imsi2, imsi3;
-    tempSum = humiSum = 0;
+    tempSum = humiSum = 0.0;
 
     // 온도, 습도 총합 계산.
     for(i=0;i<sensorCount;i++){
-        tempSum += dataBean.house[houseNum].temp[i];
-        humiSum += dataBean.house[houseNum].humid[i];
+        tempSum += parseFloat(dataBean.house[houseNum].temp[i]);
+        humiSum += parseFloat(dataBean.house[houseNum].humid[i]);
     }
 
     //평균 온,습도 계산 후 데이터빈 저장
-    dataBean.house[houseNum].avgTemp = Math.round((tempSum)/sensorCount);
-    dataBean.house[houseNum].avgHumid = Math.round((humiSum)/sensorCount);
+    dataBean.house[houseNum].avgTemp = ((tempSum)/sensorCount).toFixed(1);
+    dataBean.house[houseNum].avgHumid = ((humiSum)/sensorCount).toFixed(1);
     console.log(houseNum+'동 평균온도:'+dataBean.house[houseNum].avgTemp+'평균습도:'+dataBean.house[houseNum].avgHumid);
 
     //환기량 계산 후 데이터빈 저장
@@ -133,6 +140,7 @@ function edgeMain(houseName){
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static('views/cssAndpics'));
+app.use('/socket.io', express.static('node_modules/socket.io'));
 app.use(cors());
 
 //사용자 요청 처리(최소 접속)
@@ -155,6 +163,7 @@ app.get('/realdata.do', function(req, res){
     res.setHeader('Access-Control-Allow-Origin', '*');
     console.log('Entered /realdata.do');
     console.log('/realdata.do: '+req.query.user);
+    currentUser = req.query.user;
     res.sendFile(path.join(__dirname,'views','realtimepage.html'));
 });
 
@@ -196,9 +205,28 @@ app.post('/setData.do', function(req,res){
     res.sendFile(path.join(__dirname,'views','index.html'));
 });
 
+
+//소켓 연결시
+io.on('connection', function(socket){
+    socketGlobal = socket;
+    console.log('Socket.io: user connected. CurrentUser: '+currentUser);
+    socket.on('disconnect', function(){
+        console.log('User '+currentUser+' disconnected.');
+    });
+    socket.on('userWho', function(){
+        socket.emit('userIs', currentUser);
+    });
+});
+
+
 //사용자용 리스너
 app.listen(portNum, function(){
     console.log('listening on port:'+portNum);
+});
+
+//소켓용 리스너
+http.listen(socketPort, function(){
+    console.log('listening on socketPort: '+socketPort);
 });
 
 //클라우드 서버로부터 요청을 받을 시 처리할 부분
@@ -220,8 +248,8 @@ function getSensorData(houseName){
     dataBean.house[houseNum].msgTime[1] = timeConv.getTimeNow(); // fog에서 수신시 시간
     for(i=0;i<sensorCount;i++){
         var senNum = i+1;
-        dataBean.house[houseNum].temp[i] = db.messages[houseTemp].signals[tempera+senNum].value; 
-        dataBean.house[houseNum].humid[i] = db.messages[houseHumid].signals[humi+senNum].value; 
+        dataBean.house[houseNum].temp[i] = ((db.messages[houseTemp].signals[tempera+senNum].value)/10).toFixed(1); 
+        dataBean.house[houseNum].humid[i] = ((db.messages[houseHumid].signals[humi+senNum].value)/10).toFixed(1); 
         console.log(houseName+" "+tempera+senNum+": "+dataBean.house[houseNum].temp[i]+" | "+humi+senNum+": "+dataBean.house[houseNum].humid[i]);
     }
 }
@@ -247,8 +275,6 @@ setEdgeDeadTimer('House2');
 
 function setEdgeDeadTimer(houseName){
     var houseNum = houseName[5] - 1;
-    // var neighbor;
-    // if(houseNum == 0){neighbor = 1}else if(houseNum == 1){neighbor = 0}
     var i = 1;
     var aliveCheck, houseAskingByFog;
     if(houseNum == 0){

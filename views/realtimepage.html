@@ -4,13 +4,28 @@
 	<title>REALTIME DATA</title>
   <meta charset="UTF-8">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-	<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0;">
+  <script src="/socket.io/socket.io.js"></script>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <link rel="stylesheet" type="text/css" href="realtimepage.css" >
+  <script>
+    var socket = io();
+    var currentUser;
+    $(document).ready(function(){
+      socket.emit('userWho');
+      socket.on('userIs', function(user){
+        currentUser = user;
+        $('#currentUser').html(currentUser);
+      });
+    });
+  </script>
 </head>
 <body>	
+  <div id="currentUser">
+    --
+  </div>
   <div class="table-title">
     <h3>HOUSE1</h3>
-  </div>>
+  </div>
   <table class="table-fill">
     <tr>
       <th class="text-left">온도1</th>
