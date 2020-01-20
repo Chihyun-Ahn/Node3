@@ -14,8 +14,77 @@
       socket.emit('userWho');
       socket.on('userIs', function(user){
         currentUser = user;
-        $('#currentUser').html(currentUser);
+        $('#currentUser').html(currentUser+'님 농장');
       });
+      const onOffString = ['OFF', 'ON'];
+      const modeString = ['자동', '수동'];
+
+      socket.on('house1Msg', function(data){
+        console.log('House1 msg has arrived.');
+        console.log('House1 temp1: '+data.house[0].temp[0]);
+        $('#h1t1').html(data.house[0].temp[0]);
+        $('#h1t2').html(data.house[0].temp[1]);
+        $('#h1t3').html(data.house[0].temp[2]);
+        $('#h1t4').html(data.house[0].temp[3]);
+        $('#h1t5').html(data.house[0].temp[4]);
+        $('#h1t6').html(data.house[0].temp[5]);
+
+        $('#h1h1').html(data.house[0].humid[0]);
+        $('#h1h2').html(data.house[0].humid[1]);
+        $('#h1h3').html(data.house[0].humid[2]);
+        $('#h1h4').html(data.house[0].humid[3]);
+        $('#h1h5').html(data.house[0].humid[4]);
+        $('#h1h6').html(data.house[0].humid[5]);
+
+        $('#h1avgtemp').html(data.house[0].avgTemp);
+        $('#h1avghumid').html(data.house[0].avgHumid);
+        $('#h1tartemp').html(data.house[0].tarTemp);
+        $('#h1ventilper').html(data.house[0].ventilPer+'%');
+
+        $('#h1fanmode').html(modeString[data.house[0].fanMode]);
+        $('#h1humidifiermode').html(modeString[data.house[0].waterMode]);
+        
+        $('#h1fan1state').html(onOffString[data.house[0].fan[0]]);
+        $('#h1fan2state').html(onOffString[data.house[0].fan[1]]);
+        $('#h1fan3state').html(onOffString[data.house[0].fan[2]]);
+        $('#h1humidifierstate').html(onOffString[data.house[0].water]);
+        $('#h1alarm').html(onOffString[data.house[0].alarm]);
+        $('#h1farmstate').html(data.house[0].state);
+
+
+      });
+      socket.on('house2Msg', function(data){
+        console.log('House2 msg has arrived.');
+        console.log(data.house[1].temp[0]);
+        $('#h2t1').html(data.house[1].temp[0]);
+        $('#h2t2').html(data.house[1].temp[1]);
+        $('#h2t3').html(data.house[1].temp[2]);
+        $('#h2t4').html(data.house[1].temp[3]);
+        $('#h2t5').html(data.house[1].temp[4]);
+        $('#h2t6').html(data.house[1].temp[5]);
+
+        $('#h2h1').html(data.house[1].humid[0]);
+        $('#h2h2').html(data.house[1].humid[1]);
+        $('#h2h3').html(data.house[1].humid[2]);
+        $('#h2h4').html(data.house[1].humid[3]);
+        $('#h2h5').html(data.house[1].humid[4]);
+        $('#h2h6').html(data.house[1].humid[5]);
+
+        $('#h2avgtemp').html(data.house[1].avgTemp);
+        $('#h2avghumid').html(data.house[1].avgHumid);
+        $('#h2tartemp').html(data.house[1].tarTemp);
+        $('#h2ventilper').html(data.house[1].ventilPer);
+        $('#h2fanmode').html(modeString[data.house[1].fanMode]);
+        $('#h2humidifiermode').html(modeString[data.house[1].waterMode]);
+
+        $('#h2fan1state').html(onOffString[data.house[1].fan[0]]);
+        $('#h2fan2state').html(onOffString[data.house[1].fan[1]]);
+        $('#h2fan3state').html(onOffString[data.house[1].fan[2]]);
+        $('#h2humidifierstate').html(onOffString[data.house[1].water]);
+        $('#h2alarm').html(onOffString[data.house[1].alarm]);
+        $('#h2farmstate').html(data.house[1].state);
+      });
+      
     });
   </script>
 </head>
@@ -42,6 +111,22 @@
       <td id="h1t4" class="text-left">--.-</th>
       <td id="h1t5" class="text-left">--.-</th>
       <td id="h1t6" class="text-left">--.-</th>
+    </tr>
+    <tr>
+      <th class="text-left">습도1</th>
+      <th class="text-left">습도2</th>
+      <th class="text-left">습도3</th>
+      <th class="text-left">습도4</th>
+      <th class="text-left">습도5</th>
+      <th class="text-left">습도6</th>
+    </tr>
+    <tr>
+      <td id="h1h1" class="text-left">--.-</th>
+      <td id="h1h2" class="text-left">--.-</th>
+      <td id="h1h3" class="text-left">--.-</th>
+      <td id="h1h4" class="text-left">--.-</th>
+      <td id="h1h5" class="text-left">--.-</th>
+      <td id="h1h6" class="text-left">--.-</th>
     </tr>
     <tr>
       <th class="text-left">평균온도</th>
@@ -95,6 +180,22 @@
       <td id="h2t4" class="text-left">--.-</th>
       <td id="h2t5" class="text-left">--.-</th>
       <td id="h2t6" class="text-left">--.-</th>
+    </tr>
+    <tr>
+      <th class="text-left">습도1</th>
+      <th class="text-left">습도2</th>
+      <th class="text-left">습도3</th>
+      <th class="text-left">습도4</th>
+      <th class="text-left">습도5</th>
+      <th class="text-left">습도6</th>
+    </tr>
+    <tr>
+      <td id="h2h1" class="text-left">--.-</th>
+      <td id="h2h2" class="text-left">--.-</th>
+      <td id="h2h3" class="text-left">--.-</th>
+      <td id="h2h4" class="text-left">--.-</th>
+      <td id="h2h5" class="text-left">--.-</th>
+      <td id="h2h6" class="text-left">--.-</th>
     </tr>
     <tr>
       <th class="text-left">평균온도</th>

@@ -3,7 +3,8 @@ var express = require('express');
 var cors = require('cors');
 var path = require('path');
 var bodyParser = require('body-parser');
-var app = express();
+// var app = express();
+var socketApp = express();
 var dbConn = require('./mariadbConn');
 var timeConv = require('./timeConvert');
 const portNum = 5000;
@@ -13,7 +14,7 @@ var sendProbe = [0,0];
 var cloudAddress = 'http://223.194.33.67:10004';
 
 //소켓 만들기
-var http = require('http').Server(app);
+var http = require('http').Server(socketApp);
 var io = require('socket.io')(http);
 var socketGlobal = 'none';
 
@@ -137,19 +138,19 @@ function edgeMain(houseName){
 
 //이제 웹서버 부분
 //웹서버... json사용 및 인코딩... css파일 폴더 등록
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
-app.use(express.static('views/cssAndpics'));
-app.use('/socket.io', express.static('node_modules/socket.io'));
-app.use(cors());
+socketApp.use(bodyParser.json());
+socketApp.use(bodyParser.urlencoded({extended: true}));
+socketApp.use(express.static('views/cssAndpics'));
+socketApp.use('/socket.io', express.static('node_modules/socket.io'));
+socketApp.use(cors());
 
 //사용자 요청 처리(최소 접속)
-app.get('/', function(req,res){
+socketApp.get('/', function(req,res){
     console.log("Get request arrived. index.html is sent.");
     res.sendFile(path.join(__dirname,'views','index.html'));
 });
 
-app.get('/redirecttorealdata.do', function(req, res){
+socketApp.get('/redirecttorealdata.do', function(req, res){
     console.log('==============================');
     console.log('Redirecting to the realdata.do');
     console.log('==============================');
@@ -159,7 +160,7 @@ app.get('/redirecttorealdata.do', function(req, res){
     // res.sendFile(path.join(__dirname,'views','realtimepage.html'));
 });
 
-app.get('/realdata.do', function(req, res){
+socketApp.get('/realdata.do', function(req, res){
     res.setHeader('Access-Control-Allow-Origin', '*');
     console.log('Entered /realdata.do');
     console.log('/realdata.do: '+req.query.user);
@@ -168,7 +169,7 @@ app.get('/realdata.do', function(req, res){
 });
 
 //사용자가 getData.do 요청을 보내면, 응답으로 데이터빈을 보냄. 
-app.post('/getData.do', function(req,res){
+socketApp.post('/getData.do', function(req,res){
     console.log('getData.do request received.');
     if(req.body.userData.userData1.fanMode == 1){
         dataBean.house[0].fanMode   = req.body.userData.userData1.fanMode;
@@ -196,7 +197,7 @@ app.post('/getData.do', function(req,res){
 });
 
 //사용자가 설정value을 입력하면, 그것에 대한 응답. 
-app.post('/setData.do', function(req,res){
+socketApp.post('/setData.do', function(req,res){
     console.log('setData.do request received.');
     dataBean.house[0].tarTemp   = req.body.house1TarTemp;
     dataBean.house[0].tempBand  = req.body.house1TempBand;
@@ -219,18 +220,18 @@ io.on('connection', function(socket){
 });
 
 
-//사용자용 리스너
-app.listen(portNum, function(){
-    console.log('listening on port:'+portNum);
-});
+// //사용자용 리스너
+// socketApp.listen(portNum, function(){
+//     console.log('listening on port:'+portNum);
+// });
 
 //소켓용 리스너
-http.listen(socketPort, function(){
-    console.log('listening on socketPort: '+socketPort);
+http.listen(portNum, function(){
+    console.log('listening on socketPort: '+portNum);
 });
 
 //클라우드 서버로부터 요청을 받을 시 처리할 부분
-app.post('/cloudRequest.do', function(req,res){
+socketApp.post('/cloudRequest.do', function(req,res){
     console.log('Cloud sent a request.'+req.body.todo);
 
 });
@@ -260,6 +261,9 @@ function getSensorData(houseName){
     console.log('edgeDeadTimer[0] is reset.');
     setEdgeDeadTimer('House1');
     edgeMain("House1");
+    if(socketGlobal != 'none'){
+        socketGlobal.emit('house1Msg', dataBean);
+    }
  });
  
 //CAN메세지 리스너. 2동(Edge 2)
@@ -268,6 +272,9 @@ function getSensorData(houseName){
     console.log('edgeDeadTimer[1] is reset.');
     setEdgeDeadTimer('House2');
     edgeMain("House2");
+    if(socketGlobal != 'none'){
+        socketGlobal.emit('house2Msg', dataBean);
+    }
  });
 
 setEdgeDeadTimer('House1');
