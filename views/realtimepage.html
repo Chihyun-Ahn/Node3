@@ -34,10 +34,10 @@
       socket.on('house1Msg', function(dataBean){
         var arrTime = new Date();
         dataBean.house[0].userArrTime = now(arrTime);
-
-        socket.emit('userArriveTime', {
+        console.log('house1 msgID: '+dataBean.house[0].msgID);
+        socket.emit('userArrTimeHouse1', {
           msgID: dataBean.house[0].msgID,
-          userArrTime: dataBean.house[0].userArrTime      
+          userArrTime: dataBean.house[0].userArrTime  
         });
       
         console.log('House1 msg has arrived.');
@@ -75,11 +75,11 @@
       });
       socket.on('house2Msg', function(dataBean){
         var arrTime = new Date();
-        dataBean.house[0].userArrTime = now(arrTime);
+        dataBean.house[1].userArrTime = now(arrTime);
 
-        socket.emit('userarrtime', {
-          msgid: dataBean.house[0].msgID,
-          userarrtime: dataBean.house[0].userArrTime      
+        socket.emit('userArrTimeHouse2', {
+          msgID: dataBean.house[1].msgID,
+          userArrTime: dataBean.house[1].userArrTime      
         });
 
         console.log('House2 msg has arrived.');
@@ -131,7 +131,7 @@
       for(i=0;i<100;i++){
         var imsiTime = dataSet[i].msgID.substr(8,6);
         if(i==0){console.log(dataSet[i].msgID);}
-        // if(imsiTime<100000){imsiTime = '0'+imsiTime};
+        
         timeLabel[99-i] = imsiTime.substr(0,2)+':'+imsiTime.substr(2,2)+':'+imsiTime.substr(4,2);
         temp1[99-i] = dataSet[i].temp1;
         temp2[99-i] = dataSet[i].temp2;

@@ -156,9 +156,20 @@ io.on('connection', function(socket){
             }
         );
     });
-    socketGlobal.on('userarrtime', function(data){
-        var msgid = data.msgid;
-        var userarrtime = data.userarrtime;
+    socket.on('userArrTimeHouse1', function(data){
+        var msgid = data.msgID;
+        console.log('userArrTimeHouse1, msgid: '+msgid);
+        var userarrtime = data.userArrTime;
+        dbConn.insertUserArrTime(msgid, userarrtime).catch(
+            (err) =>{
+                console.log(err);
+            }
+        );
+    });
+    socket.on('userArrTimeHouse2', function(data){
+        var msgid = data.msgID;
+        console.log('userArrTimeHouse2, msgid: '+msgid);
+        var userarrtime = data.userArrTime;
         dbConn.insertUserArrTime(msgid, userarrtime).catch(
             (err) =>{
                 console.log(err);
@@ -241,7 +252,7 @@ function edgeMain(houseName){
     }
 
     console.log('제어 정보 갱신됨.데이터빈을 로컬DB에 저장합니다.');
-    dbConn.insertData(dataBean).catch(
+    dbConn.insertData(dataBean, houseNum).catch(
         (err) =>{
             console.log(err);
         }
