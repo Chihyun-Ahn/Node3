@@ -18,13 +18,13 @@ function convertToTime(intTime){
     return returnString;
 }
 
-function getTimeNow(){
-    var nowTime = new Date();
-    var hour = addZero(nowTime.getHours());
-    var min = addZero(nowTime.getMinutes());
-    var sec = addZero(nowTime.getSeconds());
-    var milli = addZeroMilli(nowTime.getMilliseconds());
-    var timeSum = hour + min + sec + milli;
+function now(){
+    var date = new Date();
+    var hours = addZero(date.getHours());
+    var mins = addZero(date.getMinutes());
+    var secs = addZero(date.getSeconds());
+    var millis = addZeroMilli(date.getMilliseconds());
+    var timeSum = hours+mins+secs+millis;
     return timeSum;
 }
 
@@ -48,8 +48,24 @@ function addZeroMilli(num){
     return result;
 }
 
+function getYearMonthDate(){
+    var nowDate = new Date();
+
+    var year = nowDate.getFullYear().toString();
+    var month = nowDate.getMonth() + 1;
+    var date = nowDate.getDate();
+
+    year = year[2] + year[3];
+    month = addZero(month);
+    date = addZero(date);
+
+    var result = year + month + date;
+    return result;
+}
+
 module.exports = {
     convertToTime: convertToTime,
     addZero: addZero,
-    getTimeNow: getTimeNow
+    now: now,
+    getYearMonthDate: getYearMonthDate
 }

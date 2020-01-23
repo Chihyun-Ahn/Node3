@@ -1,3 +1,7 @@
+//==========================================================================================
+//                  초기화
+//==========================================================================================
+
 // 웹서버를 구현을 위한 라이브러리 및 변수 설정
 var express = require('express');
 var cors = require('cors');
@@ -6,7 +10,7 @@ var bodyParser = require('body-parser');
 // var app = express();
 var socketApp = express();
 var dbConn = require('./mariadbConn');
-var timeConv = require('./timeConvert');
+var timeGetter = require('./timeConvert');
 const portNum = 5000;
 const socketPort = 7000;
 var edgeDeadTimer = [0,0];
@@ -50,6 +54,133 @@ var currentUser = 'none';
 //소켓캔 채널 스타트
 channel.start();
 
+//=============================================================================================
+//                                웹서버
+//=============================================================================================
+//웹서버... json사용 및 인코딩... css파일 폴더 등록
+
+socketApp.use(bodyParser.json());
+socketApp.use(bodyParser.urlencoded({extended: true}));
+socketApp.use(express.static('views/cssAndpics'));
+socketApp.use('/socket.io', express.static('node_modules/socket.io'));
+socketApp.use(cors());
+
+//사용자 요청 처리(최소 접속)
+socketApp.get('/', function(req,res){
+    console.log("Get request arrived. index.html is sent.");
+    res.sendFile(path.join(__dirname,'views','index.html'));
+});
+
+socketApp.get('/redirecttorealdata.do', function(req, res){
+    console.log('==============================');
+    console.log('Redirecting to the realdata.do');
+    console.log('==============================');
+    console.log('req.query.id: '+req.query.id);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.redirect('/realdata.do');
+    // res.sendFile(path.join(__dirname,'views','realtimepage.html'));
+});
+
+socketApp.get('/realdata.do', function(req, res){
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    console.log('Entered /realdata.do');
+    console.log('/realdata.do: '+req.query.user);
+    currentUser = req.query.user;
+    res.sendFile(path.join(__dirname,'views','realtimepage.html'));
+    // res.sendFile(path.join(__dirname,'views','oldrealtimepage.html'));
+});
+
+//사용자가 getData.do 요청을 보내면, 응답으로 데이터빈을 보냄. 
+socketApp.post('/getData.do', function(req,res){
+    console.log('getData.do request received.');
+    if(req.body.userData.userData1.fanMode == 1){
+        dataBean.house[0].fanMode   = req.body.userData.userData1.fanMode;
+        dataBean.house[0].fan1      = req.body.userData.userData1.fan1;
+        dataBean.house[0].fan2      = req.body.userData.userData1.fan2;
+        dataBean.house[0].fan3      = req.body.userData.userData1.fan3;
+    }
+
+    if(req.body.userData.userData2.fanMode == 1){
+        dataBean.house[1].fanMode   = req.body.userData.userData2.fanMode;
+        dataBean.house[1].fan1      = req.body.userData.userData2.fan1;
+        dataBean.house[1].fan2      = req.body.userData.userData2.fan2;
+        dataBean.house[1].fan3      = req.body.userData.userData2.fan3;
+    }
+
+    if(req.body.userData.userData1.waterMode == 1){
+        dataBean.house[0].waterMode = req.body.userData.userData1.waterMode;
+        dataBean.house[0].water     = req.body.userData.userData1.water;
+    }
+    if(req.body.userData.userData2.waterMode == 1){
+        dataBean.house[1].waterMode = req.body.userData.userData2.waterMode;
+        dataBean.house[1].water     = req.body.userData.userData2.water;
+    }
+    res.send(dataBean);
+});
+
+//사용자가 설정value을 입력하면, 그것에 대한 응답. 
+socketApp.post('/setData.do', function(req,res){
+    console.log('setData.do request received.');
+    dataBean.house[0].tarTemp   = req.body.house1TarTemp;
+    dataBean.house[0].tempBand  = req.body.house1TempBand;
+    dataBean.house[1].tarTemp   = req.body.house2TarTemp;
+    dataBean.house[1].tempBand  = req.body.house2TempBand;
+    res.sendFile(path.join(__dirname,'views','index.html'));
+});
+
+
+//소켓 연결시
+io.on('connection', function(socket){
+    socketGlobal = socket;
+    console.log('Socket.io: user connected. CurrentUser: '+currentUser);
+    socket.on('disconnect', function(){
+        console.log('User '+currentUser+' disconnected.');
+    });
+    socket.on('house1InitialReq', function(){
+        //사용자 정보와 함께, 1, 2동의 가장 최근 100개 데이터 전송
+        dbConn.getInitialDataset('house1').catch(
+            (err)=>{console.log(err)}
+        ).then(
+            (result)=>{
+                socket.emit('house1InitialRes', {result,currentUser});        
+            }
+        );
+    });
+    socket.on('house2InitialReq', function(){
+        //사용자 정보와 함께, 1, 2동의 가장 최근 100개 데이터 전송
+        dbConn.getInitialDataset('house2').catch(
+            (err)=>{console.log(err)}
+        ).then(
+            (result)=>{
+                socket.emit('house2InitialRes', {result,currentUser});        
+            }
+        );
+    });
+    socketGlobal.on('userarrtime', function(data){
+        var msgid = data.msgid;
+        var userarrtime = data.userarrtime;
+        dbConn.insertUserArrTime(msgid, userarrtime).catch(
+            (err) =>{
+                console.log(err);
+            }
+        );
+    });
+});
+
+//소켓용 리스너
+http.listen(portNum, function(){
+    console.log('listening on socketPort: '+portNum);
+});
+
+//클라우드 서버로부터 요청을 받을 시 처리할 부분
+socketApp.post('/cloudRequest.do', function(req,res){
+    console.log('Cloud sent a request.'+req.body.todo);
+
+});
+
+//=============================================================================================
+//                              주요 함수 및 메인 기능
+//=============================================================================================
 
 // CAN리스너에서, 메세지를 받을 때마다, 호출할 메인 함수. 
 function edgeMain(houseName){
@@ -136,105 +267,6 @@ function edgeMain(houseName){
     }
 };
 
-//이제 웹서버 부분
-//웹서버... json사용 및 인코딩... css파일 폴더 등록
-socketApp.use(bodyParser.json());
-socketApp.use(bodyParser.urlencoded({extended: true}));
-socketApp.use(express.static('views/cssAndpics'));
-socketApp.use('/socket.io', express.static('node_modules/socket.io'));
-socketApp.use(cors());
-
-//사용자 요청 처리(최소 접속)
-socketApp.get('/', function(req,res){
-    console.log("Get request arrived. index.html is sent.");
-    res.sendFile(path.join(__dirname,'views','index.html'));
-});
-
-socketApp.get('/redirecttorealdata.do', function(req, res){
-    console.log('==============================');
-    console.log('Redirecting to the realdata.do');
-    console.log('==============================');
-    console.log('req.query.id: '+req.query.id);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.redirect('/realdata.do');
-    // res.sendFile(path.join(__dirname,'views','realtimepage.html'));
-});
-
-socketApp.get('/realdata.do', function(req, res){
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    console.log('Entered /realdata.do');
-    console.log('/realdata.do: '+req.query.user);
-    currentUser = req.query.user;
-    res.sendFile(path.join(__dirname,'views','realtimepage.html'));
-});
-
-//사용자가 getData.do 요청을 보내면, 응답으로 데이터빈을 보냄. 
-socketApp.post('/getData.do', function(req,res){
-    console.log('getData.do request received.');
-    if(req.body.userData.userData1.fanMode == 1){
-        dataBean.house[0].fanMode   = req.body.userData.userData1.fanMode;
-        dataBean.house[0].fan1      = req.body.userData.userData1.fan1;
-        dataBean.house[0].fan2      = req.body.userData.userData1.fan2;
-        dataBean.house[0].fan3      = req.body.userData.userData1.fan3;
-    }
-
-    if(req.body.userData.userData2.fanMode == 1){
-        dataBean.house[1].fanMode   = req.body.userData.userData2.fanMode;
-        dataBean.house[1].fan1      = req.body.userData.userData2.fan1;
-        dataBean.house[1].fan2      = req.body.userData.userData2.fan2;
-        dataBean.house[1].fan3      = req.body.userData.userData2.fan3;
-    }
-
-    if(req.body.userData.userData1.waterMode == 1){
-        dataBean.house[0].waterMode = req.body.userData.userData1.waterMode;
-        dataBean.house[0].water     = req.body.userData.userData1.water;
-    }
-    if(req.body.userData.userData2.waterMode == 1){
-        dataBean.house[1].waterMode = req.body.userData.userData2.waterMode;
-        dataBean.house[1].water     = req.body.userData.userData2.water;
-    }
-    res.send(dataBean);
-});
-
-//사용자가 설정value을 입력하면, 그것에 대한 응답. 
-socketApp.post('/setData.do', function(req,res){
-    console.log('setData.do request received.');
-    dataBean.house[0].tarTemp   = req.body.house1TarTemp;
-    dataBean.house[0].tempBand  = req.body.house1TempBand;
-    dataBean.house[1].tarTemp   = req.body.house2TarTemp;
-    dataBean.house[1].tempBand  = req.body.house2TempBand;
-    res.sendFile(path.join(__dirname,'views','index.html'));
-});
-
-
-//소켓 연결시
-io.on('connection', function(socket){
-    socketGlobal = socket;
-    console.log('Socket.io: user connected. CurrentUser: '+currentUser);
-    socket.on('disconnect', function(){
-        console.log('User '+currentUser+' disconnected.');
-    });
-    socket.on('userWho', function(){
-        socket.emit('userIs', currentUser);
-    });
-});
-
-
-// //사용자용 리스너
-// socketApp.listen(portNum, function(){
-//     console.log('listening on port:'+portNum);
-// });
-
-//소켓용 리스너
-http.listen(portNum, function(){
-    console.log('listening on socketPort: '+portNum);
-});
-
-//클라우드 서버로부터 요청을 받을 시 처리할 부분
-socketApp.post('/cloudRequest.do', function(req,res){
-    console.log('Cloud sent a request.'+req.body.todo);
-
-});
 
 // 캔 메세지를 받아서 데이터빈에 저장하는 함수. 
 function getSensorData(houseName){
@@ -242,11 +274,8 @@ function getSensorData(houseName){
     var houseHumid = houseName + "Humid";
     var tempera = "temperature";
     var humi = "humidity";
-    var houseMsgTime = houseName + "MsgTime";
     var houseNum = houseName[5]*1 - 1; //하우스 동번호. 형변환
     var i;
-    dataBean.house[houseNum].msgTime[0] = db.messages[houseMsgTime].signals["sigTime"].value; // edge에서 메세지 전송 시간
-    dataBean.house[houseNum].msgTime[1] = timeConv.getTimeNow(); // fog에서 수신시 시간
     for(i=0;i<sensorCount;i++){
         var senNum = i+1;
         dataBean.house[houseNum].temp[i] = ((db.messages[houseTemp].signals[tempera+senNum].value)/10).toFixed(1); 
@@ -254,28 +283,6 @@ function getSensorData(houseName){
         console.log(houseName+" "+tempera+senNum+": "+dataBean.house[houseNum].temp[i]+" | "+humi+senNum+": "+dataBean.house[houseNum].humid[i]);
     }
 }
-
-//CAN메세지 리스너. 1동(Edge 1)
- db.messages["House1MsgTime"].signals["sigTime"].onUpdate(function(s) {
-    clearTimeout(edgeDeadTimer[0]);
-    console.log('edgeDeadTimer[0] is reset.');
-    setEdgeDeadTimer('House1');
-    edgeMain("House1");
-    if(socketGlobal != 'none'){
-        socketGlobal.emit('house1Msg', dataBean);
-    }
- });
- 
-//CAN메세지 리스너. 2동(Edge 2)
- db.messages["House2MsgTime"].signals["sigTime"].onUpdate(function(s) {
-    clearTimeout(edgeDeadTimer[1]);
-    console.log('edgeDeadTimer[1] is reset.');
-    setEdgeDeadTimer('House2');
-    edgeMain("House2");
-    if(socketGlobal != 'none'){
-        socketGlobal.emit('house2Msg', dataBean);
-    }
- });
 
 setEdgeDeadTimer('House1');
 setEdgeDeadTimer('House2');
@@ -314,6 +321,44 @@ function setEdgeDeadTimer(houseName){
         }, 10000)
     }, 30000);
 }
+
+//======================================================================================================
+//                       캔 메세지 리스너
+//======================================================================================================
+
+//CAN메세지 리스너. 1동(Edge 1)
+db.messages["House1MsgTime"].signals["sigTime"].onUpdate(function(s) {
+    dataBean.house[0].fogArrTime = timeGetter.now();
+    dataBean.house[0].edgeDepTime = s.value + ''; //s: edge departure time
+    // var imsi = dataBean.house[0].edgeDepTime;
+    // console.log(imsi);
+    // imsi = imsi.substr(0,5);
+    dataBean.house[0].msgID = 'h1' + timeGetter.getYearMonthDate() + dataBean.house[0].edgeDepTime.substr(0,6);
+    clearTimeout(edgeDeadTimer[0]);
+    console.log('edgeDeadTimer[0] is reset.');
+    setEdgeDeadTimer('House1');
+    edgeMain("House1");
+    if(socketGlobal != 'none'){
+        dataBean.house[0].fogDepTime = timeGetter.now();
+        socketGlobal.emit('house1Msg', dataBean);
+    }
+});
+ 
+//CAN메세지 리스너. 2동(Edge 2)
+db.messages["House2MsgTime"].signals["sigTime"].onUpdate(function(s) {
+    dataBean.house[1].fogArrTime = timeGetter.now();
+    dataBean.house[1].edgeDepTime = s.value + '';
+    dataBean.house[1].msgID = 'h2' + timeGetter.getYearMonthDate() + dataBean.house[1].edgeDepTime.substr(0,6);
+
+    clearTimeout(edgeDeadTimer[1]);
+    console.log('edgeDeadTimer[1] is reset.');
+    setEdgeDeadTimer('House2');
+    edgeMain("House2");
+    if(socketGlobal != 'none'){
+        dataBean.house[1].fogDepTime = timeGetter.now();
+        socketGlobal.emit('house2Msg', dataBean);
+    }
+});
 
 db.messages['AliveAnsToFogByH1'].signals['nodeID'].onUpdate(function(){
     clearInterval(sendProbe[0]);

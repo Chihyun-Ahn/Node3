@@ -3,14 +3,57 @@
   <head>
     <title>REAL TIME PAGE</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.3.0/Chart.min.js"></script>
     <link rel="stylesheet" type="text/css" href="realtimepage.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+      $(document).ready(function(){
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var myChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+            datasets: [{
+              label: '# of Votes',
+              data: [12, 19, 3, 5, 2, 3],
+              backgroundColor: [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 206, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)',
+                'rgba(153, 102, 255, 0.8)',
+                'rgba(255, 159, 64, 0.8)',
+              ],
+              borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 159, 64, 1)',
+              ],
+              borderWidth: 1
+            }]
+          },
+          options: {
+            scales:{
+              yAxes: [{
+                ticks: {
+                  beginAtZero: true
+                }
+              }]
+            }
+          }
+        });
+      });
+    </script>
   </head>
   <body>
     <div class="wrapper fadeInDown">
       <div id="formContent">
         <h2 class="title">REAL TIME DATA</h2>
-        <table>
+        <div>
+          <table>
             <tr>1동
               <td>온도1: </td><td>온도2: </td><td>온도3: </td><td>온도4: </td><td>온도5: </td><td>온도6: </td>
             </tr>
@@ -36,6 +79,9 @@
               <td>팬1: </td><td>팬2: </td><td>팬3: </td><td>가습: </td>
             </tr>
           </table>
+          <canvas id="myChart" height="100%"></canvas>
+        </div>
+        
       </div>
     </div>
   </body>

@@ -4,88 +4,260 @@
 	<title>REALTIME DATA</title>
   <meta charset="UTF-8">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://www.chartjs.org/dist/2.9.3/Chart.min.js"></script>
+  <script src="https://www.chartjs.org/samples/latest/utils.js"></script>
   <script src="/socket.io/socket.io.js"></script>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <link rel="stylesheet" type="text/css" href="realtimepage.css" >
   <script>
     var socket = io();
     var currentUser;
+    const onOffString = ['OFF', 'ON'];
+    const modeString = ['자동', '수동'];
+
     $(document).ready(function(){
-      socket.emit('userWho');
-      socket.on('userIs', function(user){
-        currentUser = user;
-        $('#currentUser').html(currentUser+'님 농장');
-      });
-      const onOffString = ['OFF', 'ON'];
-      const modeString = ['자동', '수동'];
-
-      socket.on('house1Msg', function(data){
-        console.log('House1 msg has arrived.');
-        console.log('House1 temp1: '+data.house[0].temp[0]);
-        $('#h1t1').html(data.house[0].temp[0]);
-        $('#h1t2').html(data.house[0].temp[1]);
-        $('#h1t3').html(data.house[0].temp[2]);
-        $('#h1t4').html(data.house[0].temp[3]);
-        $('#h1t5').html(data.house[0].temp[4]);
-        $('#h1t6').html(data.house[0].temp[5]);
-
-        $('#h1h1').html(data.house[0].humid[0]);
-        $('#h1h2').html(data.house[0].humid[1]);
-        $('#h1h3').html(data.house[0].humid[2]);
-        $('#h1h4').html(data.house[0].humid[3]);
-        $('#h1h5').html(data.house[0].humid[4]);
-        $('#h1h6').html(data.house[0].humid[5]);
-
-        $('#h1avgtemp').html(data.house[0].avgTemp);
-        $('#h1avghumid').html(data.house[0].avgHumid);
-        $('#h1tartemp').html(data.house[0].tarTemp);
-        $('#h1ventilper').html(data.house[0].ventilPer+'%');
-
-        $('#h1fanmode').html(modeString[data.house[0].fanMode]);
-        $('#h1humidifiermode').html(modeString[data.house[0].waterMode]);
-        
-        $('#h1fan1state').html(onOffString[data.house[0].fan[0]]);
-        $('#h1fan2state').html(onOffString[data.house[0].fan[1]]);
-        $('#h1fan3state').html(onOffString[data.house[0].fan[2]]);
-        $('#h1humidifierstate').html(onOffString[data.house[0].water]);
-        $('#h1alarm').html(onOffString[data.house[0].alarm]);
-        $('#h1farmstate').html(data.house[0].state);
-
-
-      });
-      socket.on('house2Msg', function(data){
-        console.log('House2 msg has arrived.');
-        console.log(data.house[1].temp[0]);
-        $('#h2t1').html(data.house[1].temp[0]);
-        $('#h2t2').html(data.house[1].temp[1]);
-        $('#h2t3').html(data.house[1].temp[2]);
-        $('#h2t4').html(data.house[1].temp[3]);
-        $('#h2t5').html(data.house[1].temp[4]);
-        $('#h2t6').html(data.house[1].temp[5]);
-
-        $('#h2h1').html(data.house[1].humid[0]);
-        $('#h2h2').html(data.house[1].humid[1]);
-        $('#h2h3').html(data.house[1].humid[2]);
-        $('#h2h4').html(data.house[1].humid[3]);
-        $('#h2h5').html(data.house[1].humid[4]);
-        $('#h2h6').html(data.house[1].humid[5]);
-
-        $('#h2avgtemp').html(data.house[1].avgTemp);
-        $('#h2avghumid').html(data.house[1].avgHumid);
-        $('#h2tartemp').html(data.house[1].tarTemp);
-        $('#h2ventilper').html(data.house[1].ventilPer);
-        $('#h2fanmode').html(modeString[data.house[1].fanMode]);
-        $('#h2humidifiermode').html(modeString[data.house[1].waterMode]);
-
-        $('#h2fan1state').html(onOffString[data.house[1].fan[0]]);
-        $('#h2fan2state').html(onOffString[data.house[1].fan[1]]);
-        $('#h2fan3state').html(onOffString[data.house[1].fan[2]]);
-        $('#h2humidifierstate').html(onOffString[data.house[1].water]);
-        $('#h2alarm').html(onOffString[data.house[1].alarm]);
-        $('#h2farmstate').html(data.house[1].state);
-      });
       
-    });
+      socket.emit('house1InitialReq');
+      socket.emit('house2InitialReq');
+      socket.on('house1InitialRes', function(data){
+        currentUser = data.currentUser;
+        $('#currentUser').html(currentUser+'님 농장');
+        var dataSet = data.result;        
+        makeGraph('house1', dataSet);
+      });
+      socket.on('house2InitialRes', function(data){
+        currentUser = data.currentUser;
+        $('#currentUser').html(currentUser+'님 농장');
+        var dataSet = data.result;        
+        makeGraph('house2', dataSet);
+      });
+      socket.on('house1Msg', function(dataBean){
+        var arrTime = new Date();
+        dataBean.house[0].userArrTime = now(arrTime);
+
+        socket.emit('userArriveTime', {
+          msgID: dataBean.house[0].msgID,
+          userArrTime: dataBean.house[0].userArrTime      
+        });
+      
+        console.log('House1 msg has arrived.');
+        console.log('House1 temp1: '+dataBean.house[0].temp[0]);
+        $('#h1t1').html(dataBean.house[0].temp[0]);
+        $('#h1t2').html(dataBean.house[0].temp[1]);
+        $('#h1t3').html(dataBean.house[0].temp[2]);
+        $('#h1t4').html(dataBean.house[0].temp[3]);
+        $('#h1t5').html(dataBean.house[0].temp[4]);
+        $('#h1t6').html(dataBean.house[0].temp[5]);
+
+        $('#h1h1').html(dataBean.house[0].humid[0]);
+        $('#h1h2').html(dataBean.house[0].humid[1]);
+        $('#h1h3').html(dataBean.house[0].humid[2]);
+        $('#h1h4').html(dataBean.house[0].humid[3]);
+        $('#h1h5').html(dataBean.house[0].humid[4]);
+        $('#h1h6').html(dataBean.house[0].humid[5]);
+
+        $('#h1avgtemp').html(dataBean.house[0].avgTemp);
+        $('#h1avghumid').html(dataBean.house[0].avgHumid);
+        $('#h1tartemp').html(dataBean.house[0].tarTemp);
+        $('#h1ventilper').html(dataBean.house[0].ventilPer+'%');
+
+        $('#h1fanmode').html(modeString[dataBean.house[0].fanMode]);
+        $('#h1humidifiermode').html(modeString[dataBean.house[0].waterMode]);
+        
+        $('#h1fan1state').html(onOffString[dataBean.house[0].fan[0]]);
+        $('#h1fan2state').html(onOffString[dataBean.house[0].fan[1]]);
+        $('#h1fan3state').html(onOffString[dataBean.house[0].fan[2]]);
+        $('#h1humidifierstate').html(onOffString[dataBean.house[0].water]);
+        $('#h1alarm').html(onOffString[dataBean.house[0].alarm]);
+        $('#h1farmstate').html(dataBean.house[0].state);
+
+
+      });
+      socket.on('house2Msg', function(dataBean){
+        var arrTime = new Date();
+        dataBean.house[0].userArrTime = now(arrTime);
+
+        socket.emit('userarrtime', {
+          msgid: dataBean.house[0].msgID,
+          userarrtime: dataBean.house[0].userArrTime      
+        });
+
+        console.log('House2 msg has arrived.');
+        console.log(dataBean.house[1].temp[0]);
+        $('#h2t1').html(dataBean.house[1].temp[0]);
+        $('#h2t2').html(dataBean.house[1].temp[1]);
+        $('#h2t3').html(dataBean.house[1].temp[2]);
+        $('#h2t4').html(dataBean.house[1].temp[3]);
+        $('#h2t5').html(dataBean.house[1].temp[4]);
+        $('#h2t6').html(dataBean.house[1].temp[5]);
+
+        $('#h2h1').html(dataBean.house[1].humid[0]);
+        $('#h2h2').html(dataBean.house[1].humid[1]);
+        $('#h2h3').html(dataBean.house[1].humid[2]);
+        $('#h2h4').html(dataBean.house[1].humid[3]);
+        $('#h2h5').html(dataBean.house[1].humid[4]);
+        $('#h2h6').html(dataBean.house[1].humid[5]);
+
+        $('#h2avgtemp').html(dataBean.house[1].avgTemp);
+        $('#h2avghumid').html(dataBean.house[1].avgHumid);
+        $('#h2tartemp').html(dataBean.house[1].tarTemp);
+        $('#h2ventilper').html(dataBean.house[1].ventilPer);
+        $('#h2fanmode').html(modeString[dataBean.house[1].fanMode]);
+        $('#h2humidifiermode').html(modeString[dataBean.house[1].waterMode]);
+
+        $('#h2fan1state').html(onOffString[dataBean.house[1].fan[0]]);
+        $('#h2fan2state').html(onOffString[dataBean.house[1].fan[1]]);
+        $('#h2fan3state').html(onOffString[dataBean.house[1].fan[2]]);
+        $('#h2humidifierstate').html(onOffString[dataBean.house[1].water]);
+        $('#h2alarm').html(onOffString[dataBean.house[1].alarm]);
+        $('#h2farmstate').html(dataBean.house[1].state);
+      });
+    }); // $(document).ready(function{}) 닫힘
+
+// ##################### 그래프 만들기 함수 ############################
+// ##################### 그래프 만들기 함수 ############################
+
+    function makeGraph(houseName, dataSet){
+      var chartID = 'myChart' + houseName[5];
+      var chartTitle = houseName[5]+'동 REAL-TIME 센서 정보';
+      var timeLabel = new Array();
+      var temp1     = new Array();
+      var temp2     = new Array();
+      var temp3     = new Array();
+      var temp4     = new Array();
+      var temp5     = new Array();
+      var temp6     = new Array();
+    
+      for(i=0;i<100;i++){
+        var imsiTime = dataSet[i].msgID.substr(8,6);
+        if(i==0){console.log(dataSet[i].msgID);}
+        // if(imsiTime<100000){imsiTime = '0'+imsiTime};
+        timeLabel[99-i] = imsiTime.substr(0,2)+':'+imsiTime.substr(2,2)+':'+imsiTime.substr(4,2);
+        temp1[99-i] = dataSet[i].temp1;
+        temp2[99-i] = dataSet[i].temp2;
+        temp3[99-i] = dataSet[i].temp3;
+        temp4[99-i] = dataSet[i].temp4;
+        temp5[99-i] = dataSet[i].temp5;
+        temp6[99-i] = dataSet[i].temp6;
+      }
+      
+      config = {
+        type: 'line',
+        data: {
+          labels: timeLabel,
+          datasets: [{
+              label: '온도1',
+              backgroundColor: window.chartColors.red, 
+              borderColor: window.chartColors.red,
+              data: temp1,
+              fill: false 
+            },{
+              label: '온도2',
+              backgroundColor: window.chartColors.orange, 
+              borderColor: window.chartColors.orange,
+              data: temp2,
+              fill: false 
+            },{
+              label: '온도3',
+              backgroundColor: window.chartColors.yellow, 
+              borderColor: window.chartColors.yellow,
+              data: temp3,
+              fill: false 
+            },{
+              label: '온도4',
+              backgroundColor: window.chartColors.green, 
+              borderColor: window.chartColors.green,
+              data: temp4,
+              fill: false 
+            },{
+              label: '온도5',
+              backgroundColor: window.chartColors.blue, 
+              borderColor: window.chartColors.blue,
+              data: temp5,
+              fill: false 
+            },{
+              label: '온도6',
+              backgroundColor: window.chartColors.purple, 
+              borderColor: window.chartColors.purple,
+              data: temp6,
+              fill: false 
+            }
+          ]
+        },
+        options: {
+          responsive: true, 
+          title: {
+            display: true, 
+            text: chartTitle
+          },
+          tooltips: {
+            mode: 'index', 
+            intersect: false,
+          },
+          hover: {
+            mode: 'nearest', 
+            intersect: true
+          }, 
+          scales: {
+            xAxes: [{
+              // type: 'time',
+              display: true, 
+              scaleLabel: {
+                display: true,
+                labelString: 'TIME'
+              }
+            }],
+            yAxes: [{
+              ticks: {
+                callback: function(value, index, values){
+                  return value + ' ºC';
+                }
+              },
+              display: true,
+              scaleLabel: {
+                display: true, 
+                labelString: '온도'
+              }
+            }]
+          }
+        }
+      }
+      
+      var ctx = document.getElementById(chartID).getContext('2d');
+      window.myLine = new Chart(ctx, config);
+      var colorNames = Object.keys(window.chartColors);
+    }
+
+// ##################### 그래프 만들기 함수 끝 ############################
+// ##################### 그래프 만들기 함수 끝 ############################
+    function now(date){
+      var hours = addZero(date.getHours());
+      var mins = addZero(date.getMinutes());
+      var secs = addZero(date.getSeconds());
+      var millis = addZeroMilli(date.getMilliseconds());
+      var timeSum = hours+mins+secs+millis;
+      return timeSum;
+    }
+
+    function addZero(num){
+      var n = num.toString();
+      var x = (n<10)?("0"+n):(""+n);
+      return x;
+    }
+
+    function addZeroMilli(num){
+      var result = "";
+      if(num<10){
+          result = "00" + num;
+      }else if(num >= 10 && num < 100){
+          result = "0" + num;
+      }else if(num >= 100 && num < 1000){
+          result = "" + num;
+      }else{
+          console.log('addZeroMilli: Input value is invalid.');
+      }
+      return result;
+    }
   </script>
 </head>
 <body>	
@@ -95,140 +267,150 @@
   <div class="table-title">
     <h3>HOUSE1</h3>
   </div>
-  <table class="table-fill">
-    <tr>
-      <th class="text-left">온도1</th>
-      <th class="text-left">온도2</th>
-      <th class="text-left">온도3</th>
-      <th class="text-left">온도4</th>
-      <th class="text-left">온도5</th>
-      <th class="text-left">온도6</th>
-    </tr>
-    <tr>
-      <td id="h1t1" class="text-left">--.-</th>
-      <td id="h1t2" class="text-left">--.-</th>
-      <td id="h1t3" class="text-left">--.-</th>
-      <td id="h1t4" class="text-left">--.-</th>
-      <td id="h1t5" class="text-left">--.-</th>
-      <td id="h1t6" class="text-left">--.-</th>
-    </tr>
-    <tr>
-      <th class="text-left">습도1</th>
-      <th class="text-left">습도2</th>
-      <th class="text-left">습도3</th>
-      <th class="text-left">습도4</th>
-      <th class="text-left">습도5</th>
-      <th class="text-left">습도6</th>
-    </tr>
-    <tr>
-      <td id="h1h1" class="text-left">--.-</th>
-      <td id="h1h2" class="text-left">--.-</th>
-      <td id="h1h3" class="text-left">--.-</th>
-      <td id="h1h4" class="text-left">--.-</th>
-      <td id="h1h5" class="text-left">--.-</th>
-      <td id="h1h6" class="text-left">--.-</th>
-    </tr>
-    <tr>
-      <th class="text-left">평균온도</th>
-      <th class="text-left">평균습도</th>
-      <th class="text-left">목표온도</th>
-      <th class="text-left">환기량</th>
-      <th class="text-left">팬모드</th>
-      <th class="text-left">가습모드</th>
-    </tr>
-    <tr>
-      <td id="h1avgtemp" class="text-left">--.-</th>
-      <td id="h1avghumid" class="text-left">--.-</th>
-      <td id="h1tartemp" class="text-left">--.-</th>
-      <td id="h1ventilper" class="text-left">--.-%</th>
-      <td id="h1fanmode" class="text-left">---</th>
-      <td id="h1humidifiermode" class="text-left">---</th>
-    </tr>
-    <tr>
-      <th class="text-left">팬1</th>
-      <th class="text-left">팬2</th>
-      <th class="text-left">팬3</th>
-      <th class="text-left">가습기</th>
-      <th class="text-left">알람</th>
-      <th class="text-left">상태</th>
-    </tr>
-    <tr>
-      <td id="h1fan1state" class="text-left">---</th>
-      <td id="h1fan2state" class="text-left">---</th>
-      <td id="h1fan3state" class="text-left">---</th>
-      <td id="h1humidifierstate" class="text-left">---</th>
-      <td id="h1alarm" class="text-left">---</th>
-      <td id="h1farmstate" class="text-left">---</th>
-    </tr>
-  </table>
+  <!-- ####################################### 1동 테이블 ######################################-->
+  <!-- ####################################### 1동 테이블 ######################################-->
+  <div class="table-wrapper">
+    <table class="table-fill">
+      <tr>
+        <th class="text-left">온도1</th>
+        <th class="text-left">온도2</th>
+        <th class="text-left">온도3</th>
+        <th class="text-left">온도4</th>
+        <th class="text-left">온도5</th>
+        <th class="text-left">온도6</th>
+      </tr>
+      <tr>
+        <td id="h1t1" class="text-left">--.-</th>
+        <td id="h1t2" class="text-left">--.-</th>
+        <td id="h1t3" class="text-left">--.-</th>
+        <td id="h1t4" class="text-left">--.-</th>
+        <td id="h1t5" class="text-left">--.-</th>
+        <td id="h1t6" class="text-left">--.-</th>
+      </tr>
+      <tr>
+        <th class="text-left">습도1</th>
+        <th class="text-left">습도2</th>
+        <th class="text-left">습도3</th>
+        <th class="text-left">습도4</th>
+        <th class="text-left">습도5</th>
+        <th class="text-left">습도6</th>
+      </tr>
+      <tr>
+        <td id="h1h1" class="text-left">--.-</th>
+        <td id="h1h2" class="text-left">--.-</th>
+        <td id="h1h3" class="text-left">--.-</th>
+        <td id="h1h4" class="text-left">--.-</th>
+        <td id="h1h5" class="text-left">--.-</th>
+        <td id="h1h6" class="text-left">--.-</th>
+      </tr>
+      <tr>
+        <th class="text-left">평균온도</th>
+        <th class="text-left">평균습도</th>
+        <th class="text-left">목표온도</th>
+        <th class="text-left">환기량</th>
+        <th class="text-left">팬모드</th>
+        <th class="text-left">가습모드</th>
+      </tr>
+      <tr>
+        <td id="h1avgtemp" class="text-left">--.-</th>
+        <td id="h1avghumid" class="text-left">--.-</th>
+        <td id="h1tartemp" class="text-left">--.-</th>
+        <td id="h1ventilper" class="text-left">--.-%</th>
+        <td id="h1fanmode" class="text-left">---</th>
+        <td id="h1humidifiermode" class="text-left">---</th>
+      </tr>
+      <tr>
+        <th class="text-left">팬1</th>
+        <th class="text-left">팬2</th>
+        <th class="text-left">팬3</th>
+        <th class="text-left">가습기</th>
+        <th class="text-left">알람</th>
+        <th class="text-left">상태</th>
+      </tr>
+      <tr>
+        <td id="h1fan1state" class="text-left">---</th>
+        <td id="h1fan2state" class="text-left">---</th>
+        <td id="h1fan3state" class="text-left">---</th>
+        <td id="h1humidifierstate" class="text-left">---</th>
+        <td id="h1alarm" class="text-left">---</th>
+        <td id="h1farmstate" class="text-left">---</th>
+      </tr>
+    </table>
+    <canvas class="graph" id="myChart1" style="display: block; height: 87px; width: 175px;" width="218" height="108" class="chartjs-render-monitor"></canvas>
+  </div>
+  <!-- ####################################### 2동 테이블 ######################################-->
+  <!-- ####################################### 2동 테이블 ######################################-->
   <div class="table-title">
     <h3>HOUSE2</h3>
-  </div>>
-  <table class="table-fill">
-    <tr>
-      <th class="text-left">온도1</th>
-      <th class="text-left">온도2</th>
-      <th class="text-left">온도3</th>
-      <th class="text-left">온도4</th>
-      <th class="text-left">온도5</th>
-      <th class="text-left">온도6</th>
-    </tr>
-    <tr>
-      <td id="h2t1" class="text-left">--.-</th>
-      <td id="h2t2" class="text-left">--.-</th>
-      <td id="h2t3" class="text-left">--.-</th>
-      <td id="h2t4" class="text-left">--.-</th>
-      <td id="h2t5" class="text-left">--.-</th>
-      <td id="h2t6" class="text-left">--.-</th>
-    </tr>
-    <tr>
-      <th class="text-left">습도1</th>
-      <th class="text-left">습도2</th>
-      <th class="text-left">습도3</th>
-      <th class="text-left">습도4</th>
-      <th class="text-left">습도5</th>
-      <th class="text-left">습도6</th>
-    </tr>
-    <tr>
-      <td id="h2h1" class="text-left">--.-</th>
-      <td id="h2h2" class="text-left">--.-</th>
-      <td id="h2h3" class="text-left">--.-</th>
-      <td id="h2h4" class="text-left">--.-</th>
-      <td id="h2h5" class="text-left">--.-</th>
-      <td id="h2h6" class="text-left">--.-</th>
-    </tr>
-    <tr>
-      <th class="text-left">평균온도</th>
-      <th class="text-left">평균습도</th>
-      <th class="text-left">목표온도</th>
-      <th class="text-left">환기량</th>
-      <th class="text-left">팬모드</th>
-      <th class="text-left">가습모드</th>
-    </tr>
-    <tr>
-      <td id="h2avgtemp" class="text-left">--.-</th>
-      <td id="h2avghumid" class="text-left">--.-</th>
-      <td id="h2tartemp" class="text-left">--.-</th>
-      <td id="h2ventilper" class="text-left">--.-%</th>
-      <td id="h2fanmode" class="text-left">---</th>
-      <td id="h2humidifiermode" class="text-left">---</th>
-    </tr>
-    <tr>
-      <th class="text-left">팬1</th>
-      <th class="text-left">팬2</th>
-      <th class="text-left">팬3</th>
-      <th class="text-left">가습기</th>
-      <th class="text-left">알람</th>
-      <th class="text-left">상태</th>
-    </tr>
-    <tr>
-      <td id="h2fan1state" class="text-left">---</th>
-      <td id="h2fan2state" class="text-left">---</th>
-      <td id="h2fan3state" class="text-left">---</th>
-      <td id="h2humidifierstate" class="text-left">---</th>
-      <td id="h2alarm" class="text-left">---</th>
-      <td id="h2farmstate" class="text-left">---</th>
-    </tr>
-  </table>
+  </div>
+  <div class="table-wrapper">
+    <table class="table-fill">
+      <tr>
+        <th class="text-left">온도1</th>
+        <th class="text-left">온도2</th>
+        <th class="text-left">온도3</th>
+        <th class="text-left">온도4</th>
+        <th class="text-left">온도5</th>
+        <th class="text-left">온도6</th>
+      </tr>
+      <tr>
+        <td id="h2t1" class="text-left">--.-</th>
+        <td id="h2t2" class="text-left">--.-</th>
+        <td id="h2t3" class="text-left">--.-</th>
+        <td id="h2t4" class="text-left">--.-</th>
+        <td id="h2t5" class="text-left">--.-</th>
+        <td id="h2t6" class="text-left">--.-</th>
+      </tr>
+      <tr>
+        <th class="text-left">습도1</th>
+        <th class="text-left">습도2</th>
+        <th class="text-left">습도3</th>
+        <th class="text-left">습도4</th>
+        <th class="text-left">습도5</th>
+        <th class="text-left">습도6</th>
+      </tr>
+      <tr>
+        <td id="h2h1" class="text-left">--.-</th>
+        <td id="h2h2" class="text-left">--.-</th>
+        <td id="h2h3" class="text-left">--.-</th>
+        <td id="h2h4" class="text-left">--.-</th>
+        <td id="h2h5" class="text-left">--.-</th>
+        <td id="h2h6" class="text-left">--.-</th>
+      </tr>
+      <tr>
+        <th class="text-left">평균온도</th>
+        <th class="text-left">평균습도</th>
+        <th class="text-left">목표온도</th>
+        <th class="text-left">환기량</th>
+        <th class="text-left">팬모드</th>
+        <th class="text-left">가습모드</th>
+      </tr>
+      <tr>
+        <td id="h2avgtemp" class="text-left">--.-</th>
+        <td id="h2avghumid" class="text-left">--.-</th>
+        <td id="h2tartemp" class="text-left">--.-</th>
+        <td id="h2ventilper" class="text-left">--.-%</th>
+        <td id="h2fanmode" class="text-left">---</th>
+        <td id="h2humidifiermode" class="text-left">---</th>
+      </tr>
+      <tr>
+        <th class="text-left">팬1</th>
+        <th class="text-left">팬2</th>
+        <th class="text-left">팬3</th>
+        <th class="text-left">가습기</th>
+        <th class="text-left">알람</th>
+        <th class="text-left">상태</th>
+      </tr>
+      <tr>
+        <td id="h2fan1state" class="text-left">---</th>
+        <td id="h2fan2state" class="text-left">---</th>
+        <td id="h2fan3state" class="text-left">---</th>
+        <td id="h2humidifierstate" class="text-left">---</th>
+        <td id="h2alarm" class="text-left">---</th>
+        <td id="h2farmstate" class="text-left">---</th>
+      </tr>
+    </table>
+    <canvas class="graph" id="myChart2" style="display: block; height: 87px; width: 175px;" width="218" height="108" class="chartjs-render-monitor"></canvas>
+  </div>
 </body>
 </html>

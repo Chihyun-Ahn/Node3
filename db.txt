@@ -9,8 +9,11 @@ DROP TABLE house2;
 
 CREATE TABLE house1(
     num         	INT PRIMARY KEY AUTO_INCREMENT,
-    curTime         TIMESTAMP DEFAULT NOW(),
-    msgTime         VARCHAR(30),
+    msgID           VARCHAR(15),
+    edgeDepTime     VARCHAR(10),
+    fogArrTime      VARCHAR(10),
+    fogDepTime      VARCHAR(10),
+    userArrTime     VARCHAR(10),
     tarTemp	        DECIMAL(4,1),
     tempBand	    DECIMAL(3,1),
     ventilPer	    DECIMAL(4,1),
@@ -37,11 +40,14 @@ CREATE TABLE house1(
 
 CREATE TABLE house2(
     num         	INT PRIMARY KEY AUTO_INCREMENT,
-    curTime         TIMESTAMP DEFAULT NOW(),
-    msgTime         VARCHAR(30),
+    msgID           VARCHAR(15),
+    edgeDepTime     VARCHAR(10),
+    fogArrTime      VARCHAR(10),
+    fogDepTime      VARCHAR(10),
+    userArrTime     VARCHAR(10),
     tarTemp	        DECIMAL(4,1),
     tempBand	    DECIMAL(3,1),
-    ventilPer	    DECIMAL(4,1),	
+    ventilPer	    DECIMAL(4,1),
     temp1	       	DECIMAL(4,1),
     temp2	       	DECIMAL(4,1),
     temp3	       	DECIMAL(4,1),
@@ -80,26 +86,28 @@ SELECT * FROM house1 ORDER BY num LIMIT 1;
 DELETE FROM house1;
 ALTER TABLE house1 AUTO_INCREMENT=1;
 
-CREATE TABLE house3(
+CREATE TABLE testtable(
     num         	INT PRIMARY KEY AUTO_INCREMENT,
-    curTime         TIMESTAMP DEFAULT NOW(),
-    msgTime         VARCHAR(20),
-    tarTemp	        DECIMAL(4,1),
-    tempBand	    DECIMAL(3,1),
-    ventilPer	    DECIMAL(4,1),	
-    temp1	       	DECIMAL(4,1),
-    temp2	       	DECIMAL(4,1),
-    humid1       	DECIMAL(4,1),
-    humid2       	DECIMAL(4,1),
-    fanMode	        TINYINT(1),
-    fan1		    TINYINT(1),
-    fan2		    TINYINT(1),
-    fan3		    TINYINT(1),
-    doseMode	    TINYINT(1),
-    feed		    TINYINT(1),
-    water		    TINYINT(1),
-    alarm		    TINYINT(1)
+    columna         VARCHAR(10),
+    columnb         VARCHAR(10),
+    columnc         VARCHAR(10),
+    columnd         VARCHAR(10)
 );
+
+INSERT INTO testtable(columna, columnb, columnc, columnd) 
+VALUES(
+    'atext', 'btext', 'ctext','dtext'
+);
+
+UPDATE testtable SET columna = 'updatedA', columnb = 'updatedB' WHERE num = 1;
 
 commit;
 
+//가장 최근 100행 데이터 가져오기
+SELECT * FROM house1 ORDER BY num DESC limit 100;
+
+//열 속성 수정
+ALTER TABLE house2 MODIFY edgeDepTime VARCHAR(10);
+ALTER TABLE house2 MODIFY fogArrTime VARCHAR(10);
+ALTER TABLE house2 MODIFY fogDepTime VARCHAR(10);
+ALTER TABLE house2 MODIFY userArrTime VARCHAR(10);
