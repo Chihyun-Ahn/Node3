@@ -71,23 +71,12 @@ socketApp.get('/', function(req,res){
     res.sendFile(path.join(__dirname,'views','index.html'));
 });
 
-socketApp.get('/redirecttorealdata.do', function(req, res){
-    console.log('==============================');
-    console.log('Redirecting to the realdata.do');
-    console.log('==============================');
-    console.log('req.query.id: '+req.query.id);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.redirect('/realdata.do');
-    // res.sendFile(path.join(__dirname,'views','realtimepage.html'));
-});
-
 socketApp.get('/realdata.do', function(req, res){
     res.setHeader('Access-Control-Allow-Origin', '*');
     console.log('Entered /realdata.do');
     console.log('/realdata.do: '+req.query.user);
     currentUser = req.query.user;
     res.sendFile(path.join(__dirname,'views','realtimepage.html'));
-    // res.sendFile(path.join(__dirname,'views','oldrealtimepage.html'));
 });
 
 //사용자가 getData.do 요청을 보내면, 응답으로 데이터빈을 보냄. 

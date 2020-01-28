@@ -9,6 +9,7 @@
   <script src="/socket.io/socket.io.js"></script>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <link rel="stylesheet" type="text/css" href="realtimepage.css" >
+
   <script>
     var socket = io();
     var currentUser;
@@ -260,10 +261,18 @@
     }
   </script>
 </head>
+<!-- ####################문서 바디 시작#################### -->
+<!-- ####################문서 바디 시작#################### -->
 <body>	
+  <div class="topnav">
+    <a class="active" href="#">REAL-TIME화면</a>
+    <a href="#">과거 데이터</a>
+    <a href="#">제어화면</a>
+    <a href="#">로그인화면</a>
+  </div>
   <div id="currentUser">
     --
-  </div>
+  </div>  
   <div class="table-title">
     <h3>HOUSE1</h3>
   </div>
