@@ -79,6 +79,14 @@ socketApp.get('/realdata.do', function(req, res){
     res.sendFile(path.join(__dirname,'views','realtimepage.html'));
 });
 
+socketApp.get('/pastdatapage.do', function(req, res){
+    console.log('Entered /pastdatapage.do');
+    console.log('/pastdatapage.do: '+req.query.user);
+    currentUser = req.query.user;
+    res.sendFile(path.join(__dirname,'views','realtimepage.html'));
+});
+
+
 //사용자가 getData.do 요청을 보내면, 응답으로 데이터빈을 보냄. 
 socketApp.post('/getData.do', function(req,res){
     console.log('getData.do request received.');

@@ -11,17 +11,23 @@
   <link rel="stylesheet" type="text/css" href="realtimepage.css" >
 
   <script>
+    var cloudServerAddress = 'http://223.194.33.67:10004';
     var socket = io();
     var currentUser;
     const onOffString = ['OFF', 'ON'];
     const modeString = ['자동', '수동'];
 
     $(document).ready(function(){
-      
       socket.emit('house1InitialReq');
       socket.emit('house2InitialReq');
       socket.on('house1InitialRes', function(data){
         currentUser = data.currentUser;
+        
+        $('#realtimepage').attr("href", './realdata.do?user='+currentUser);
+        $('#pastdatapage').attr("href", cloudServerAddress+'/pastdatapage.do?user='+currentUser);
+        $('#controlpage').attr("href", './controlpage.do?user='+currentUser);
+        $('#loginpage').attr("href", cloudServerAddress+'/login.do');
+
         $('#currentUser').html(currentUser+'님 농장');
         var dataSet = data.result;        
         makeGraph('house1', dataSet);
@@ -113,6 +119,7 @@
         $('#h2alarm').html(onOffString[dataBean.house[1].alarm]);
         $('#h2farmstate').html(dataBean.house[1].state);
       });
+      
     }); // $(document).ready(function{}) 닫힘
 
 // ##################### 그래프 만들기 함수 ############################
@@ -265,14 +272,12 @@
 <!-- ####################문서 바디 시작#################### -->
 <body>	
   <div class="topnav">
-    <a class="active" href="#">REAL-TIME화면</a>
-    <a href="#">과거 데이터</a>
-    <a href="#">제어화면</a>
-    <a href="#">로그인화면</a>
+    <a id="realtimepage" class="active" href="#">REAL-TIME화면</a>
+    <a id="pastdatapage" href="#">과거 데이터</a>
+    <a id="controlpage" href="#">제어화면</a>
+    <a id="loginpage" href="#">로그인화면</a>
   </div>
-  <div id="currentUser">
-    --
-  </div>  
+  <div class="currentUser" id="currentUser">--</div>
   <div class="table-title">
     <h3>HOUSE1</h3>
   </div>
