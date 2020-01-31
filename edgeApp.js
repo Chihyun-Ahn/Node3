@@ -1,6 +1,6 @@
-//==========================================================================================
+//#####################################################
 //                  초기화
-//==========================================================================================
+//#####################################################
 
 // 웹서버를 구현을 위한 라이브러리 및 변수 설정
 var express = require('express');
@@ -21,6 +21,8 @@ var cloudAddress = 'http://223.194.33.67:10004';
 var http = require('http').Server(socketApp);
 var io = require('socket.io')(http);
 var socketGlobal = 'none';
+
+// var http2 = require('http').
 
 //전역 변수로 데이터빈 객체 사용
 var dataBean = require('./dataBean');
@@ -54,9 +56,9 @@ var currentUser = 'none';
 //소켓캔 채널 스타트
 channel.start();
 
-//=============================================================================================
+//#####################################################
 //                                웹서버
-//=============================================================================================
+//#####################################################
 //웹서버... json사용 및 인코딩... css파일 폴더 등록
 
 socketApp.use(bodyParser.json());
@@ -79,13 +81,9 @@ socketApp.get('/realdata.do', function(req, res){
     res.sendFile(path.join(__dirname,'views','realtimepage.html'));
 });
 
-socketApp.get('/pastdatapage.do', function(req, res){
-    console.log('Entered /pastdatapage.do');
-    console.log('/pastdatapage.do: '+req.query.user);
-    currentUser = req.query.user;
-    res.sendFile(path.join(__dirname,'views','realtimepage.html'));
+socketApp.get('test.do', function(req, res){
+    console.log('#####################');
 });
-
 
 //사용자가 getData.do 요청을 보내면, 응답으로 데이터빈을 보냄. 
 socketApp.post('/getData.do', function(req,res){
@@ -173,6 +171,10 @@ io.on('connection', function(socket){
             }
         );
     });
+    socket.on('haha', function(data){
+        console.log(data.user);
+        socket.emit('answer', {answer: 'hoho'});
+    });
 });
 
 //소켓용 리스너
@@ -186,9 +188,9 @@ socketApp.post('/cloudRequest.do', function(req,res){
 
 });
 
-//=============================================================================================
+//#####################################################
 //                              주요 함수 및 메인 기능
-//=============================================================================================
+//#####################################################
 
 // CAN리스너에서, 메세지를 받을 때마다, 호출할 메인 함수. 
 function edgeMain(houseName){
@@ -330,9 +332,9 @@ function setEdgeDeadTimer(houseName){
     }, 30000);
 }
 
-//======================================================================================================
+//#####################################################
 //                       캔 메세지 리스너
-//======================================================================================================
+//#####################################################
 
 //CAN메세지 리스너. 1동(Edge 1)
 db.messages["House1MsgTime"].signals["sigTime"].onUpdate(function(s) {
