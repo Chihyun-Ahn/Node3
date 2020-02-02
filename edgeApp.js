@@ -10,12 +10,13 @@ var bodyParser = require('body-parser');
 // var app = express();
 var socketApp = express();
 var dbConn = require('./mariadbConn');
-var timeGetter = require('./timeConvert');
+const timeGetter = require('./timeConvert');
 const portNum = 5000;
 const socketPort = 7000;
 var edgeDeadTimer = [0,0];
 var sendProbe = [0,0];
 var cloudAddress = 'http://223.194.33.67:10004';
+var timesyncServer = require('timesync/server');
 
 //소켓 만들기
 var http = require('http').Server(socketApp);
@@ -56,9 +57,9 @@ var currentUser = 'none';
 //소켓캔 채널 스타트
 channel.start();
 
-//#####################################################
+//###########################################################################
 //                                웹서버
-//#####################################################
+//###########################################################################
 //웹서버... json사용 및 인코딩... css파일 폴더 등록
 
 socketApp.use(bodyParser.json());
@@ -66,6 +67,8 @@ socketApp.use(bodyParser.urlencoded({extended: true}));
 socketApp.use(express.static('views/cssAndpics'));
 socketApp.use('/socket.io', express.static('node_modules/socket.io'));
 socketApp.use(cors());
+socketApp.use('/timesync', timesyncServer.requestHandler);
+
 
 //사용자 요청 처리(최소 접속)
 socketApp.get('/', function(req,res){
@@ -171,9 +174,10 @@ io.on('connection', function(socket){
             }
         );
     });
-    socket.on('haha', function(data){
-        console.log(data.user);
-        socket.emit('answer', {answer: 'hoho'});
+    socket.on('cloudTimeSyncReq',function(IDNum){
+        var fogTime = timeGetter.nowMilli();
+        var idnum = IDNum;
+        socket.emit('cloudTimeSyncRes', {IDNum: idnum, fogTime: fogTime});
     });
 });
 
@@ -188,9 +192,9 @@ socketApp.post('/cloudRequest.do', function(req,res){
 
 });
 
-//#####################################################
-//                              주요 함수 및 메인 기능
-//#####################################################
+//##########################################################################################################
+//                                      주요 함수 및 메인 기능
+//##########################################################################################################
 
 // CAN리스너에서, 메세지를 받을 때마다, 호출할 메인 함수. 
 function edgeMain(houseName){
@@ -332,17 +336,15 @@ function setEdgeDeadTimer(houseName){
     }, 30000);
 }
 
-//#####################################################
-//                       캔 메세지 리스너
-//#####################################################
+//##########################################################################################################
+//                                           캔 메세지 리스너
+//##########################################################################################################
 
 //CAN메세지 리스너. 1동(Edge 1)
 db.messages["House1MsgTime"].signals["sigTime"].onUpdate(function(s) {
     dataBean.house[0].fogArrTime = timeGetter.now();
-    dataBean.house[0].edgeDepTime = s.value + ''; //s: edge departure time
-    // var imsi = dataBean.house[0].edgeDepTime;
-    // console.log(imsi);
-    // imsi = imsi.substr(0,5);
+    var milliTime = s.value;
+    dataBean.house[0].edgeDepTime = timeGetter.millToTime(milliTime);
     dataBean.house[0].msgID = 'h1' + timeGetter.getYearMonthDate() + dataBean.house[0].edgeDepTime.substr(0,6);
     clearTimeout(edgeDeadTimer[0]);
     console.log('edgeDeadTimer[0] is reset.');
@@ -357,7 +359,8 @@ db.messages["House1MsgTime"].signals["sigTime"].onUpdate(function(s) {
 //CAN메세지 리스너. 2동(Edge 2)
 db.messages["House2MsgTime"].signals["sigTime"].onUpdate(function(s) {
     dataBean.house[1].fogArrTime = timeGetter.now();
-    dataBean.house[1].edgeDepTime = s.value + '';
+    var milliTime = s.value;
+    dataBean.house[1].edgeDepTime = timeGetter.millToTime(milliTime);
     dataBean.house[1].msgID = 'h2' + timeGetter.getYearMonthDate() + dataBean.house[1].edgeDepTime.substr(0,6);
 
     clearTimeout(edgeDeadTimer[1]);
@@ -410,4 +413,16 @@ db.messages['H2AskingByH1'].signals['nodeID'].onUpdate(function(){
     db.messages['H2StateByFog'].signals['state'].update(commState[1]);
     console.log('H2StateByFog>>state>>commState[1]: '+ commState[1]);
     db.send('H2StateByFog');
+});
+
+db.messages['timeSyncReqH2'].signals['sigTime'].onUpdate(function(s){
+    var fogRcvTime = timeGetter.nowMilli();
+    db.messages['timeSyncResFogH2'].signals['sigTime'].update(fogRcvTime);
+    db.send('timeSyncResFogH2');
+});
+
+db.messages['timeSyncReqH1'].signals['sigTime'].onUpdate(function(s){
+    var fogRcvTime = timeGetter.nowMilli();
+    db.messages['timeSyncResFogH1'].signals['sigTime'].update(fogRcvTime);
+    db.send('timeSyncResFogH1');
 });
