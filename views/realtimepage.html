@@ -18,9 +18,13 @@
     const modeString = ['자동', '수동'];
 
     $(document).ready(function(){
-      socket.emit('house1InitialReq');
-      socket.emit('house2InitialReq');
-      socket.on('house1InitialRes', function(data){
+      socket.emit('house1GraphDataReq');
+      socket.emit('house2GraphDataReq');
+      setInterval(function(){
+        socket.emit('house1GraphDataReq');
+        socket.emit('house2GraphDataReq');
+      }, 11000);
+      socket.on('house1GraphDataRes', function(data){
         currentUser = data.currentUser;
         
         $('#realtimepage').attr("href", './realdata.do?user='+currentUser);
@@ -32,9 +36,7 @@
         var dataSet = data.result;        
         makeGraph('house1', dataSet);
       });
-      socket.on('house2InitialRes', function(data){
-        currentUser = data.currentUser;
-        $('#currentUser').html(currentUser+'님 농장');
+      socket.on('house2GraphDataRes', function(data){
         var dataSet = data.result;        
         makeGraph('house2', dataSet);
       });

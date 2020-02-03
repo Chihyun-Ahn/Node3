@@ -83,7 +83,7 @@ async function insertSingleData(msgid, singleDataName, singleDataValue){
     }
 }
 
-async function getInitialDataset(house){
+async function getGraphDataset(house){
     let conn, result;
     var sql = 'SELECT * FROM '+house+' ORDER BY num DESC LIMIT 100';
     try{
@@ -102,6 +102,6 @@ async function getInitialDataset(house){
 module.exports = {
     insertData: insertData,
     insertUserArrTime: insertUserArrTime,
-    getInitialDataset: getInitialDataset,
+    getGraphDataset: getGraphDataset,
     insertSingleData: insertSingleData
 };

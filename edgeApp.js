@@ -134,23 +134,23 @@ io.on('connection', function(socket){
     socket.on('disconnect', function(){
         console.log('User '+currentUser+' disconnected.');
     });
-    socket.on('house1InitialReq', function(){
+    socket.on('house1GraphDataReq', function(){
         //사용자 정보와 함께, 1, 2동의 가장 최근 100개 데이터 전송
-        dbConn.getInitialDataset('house1').catch(
+        dbConn.getGraphDataset('house1').catch(
             (err)=>{console.log(err)}
         ).then(
             (result)=>{
-                socket.emit('house1InitialRes', {result,currentUser});        
+                socket.emit('house1GraphDataRes', {result,currentUser});        
             }
         );
     });
-    socket.on('house2InitialReq', function(){
+    socket.on('house2GraphDataReq', function(){
         //사용자 정보와 함께, 1, 2동의 가장 최근 100개 데이터 전송
-        dbConn.getInitialDataset('house2').catch(
+        dbConn.getGraphDataset('house2').catch(
             (err)=>{console.log(err)}
         ).then(
             (result)=>{
-                socket.emit('house2InitialRes', {result,currentUser});        
+                socket.emit('house2GraphDataRes', {result,currentUser});        
             }
         );
     });
