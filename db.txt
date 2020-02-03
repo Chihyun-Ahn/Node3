@@ -69,11 +69,17 @@ CREATE TABLE house2(
     alarm		    TINYINT(1)
 );
 
+ALTER TABLE house1 ADD COLUMN cloudArrTime VARCHAR(10) AFTER fogDepTime;
+ALTER TABLE house2 ADD COLUMN cloudArrTime VARCHAR(10) AFTER fogDepTime;
+
+UPDATE house1 SET cloudArrTime='999999999' WHERE msgID='h1200203152008'
 
 INSERT INTO house1(tarTemp, tempBand) 
 VALUES(
     22.0, 3.0
 );
+
+INSERT INTO house1(cloudArrTime) VALUES() WHERE msgID=;
 
 SHOW tables;
 SHOW DATABASES;

@@ -174,11 +174,41 @@ io.on('connection', function(socket){
             }
         );
     });
-    socket.on('cloudTimeSyncReq',function(IDNum){
-        var fogTime = timeGetter.nowMilli();
-        var idnum = IDNum;
-        socket.emit('cloudTimeSyncRes', {IDNum: idnum, fogTime: fogTime});
+    socket.on('house1SyncReqFromCloud', function(data){
+        var cloudToFogArrTime = timeGetter.nowMilli();
+        var fogDepTime = data.fogDepTime;
+        var msgIDHere = data.msgID;
+        var rtt = cloudToFogArrTime - fogDepTime;
+        var oneWayDelayFogToCloud = Math.round(rtt / 2.0);
+        var estimatedCloudArrTime = fogDepTime + oneWayDelayFogToCloud;
+
+        if(dataBean.house[0].msgID==msgIDHere){
+            dataBean.house[0].cloudArrTime = timeGetter.millToTime(estimatedCloudArrTime);
+            dbConn.insertSingleData(dataBean.house[0].msgID, 'cloudArrTime', dataBean.house[0].cloudArrTime)
+            .catch(function(err){console.log(err);});
+            socket.emit('house1SyncResFromFog', dataBean); // Send dataBean, when estimatedCloudArrTime is saved.
+        }else{
+            console.log('house1SyncReqFromCloud: msgID does not match. Error. ');
+        }
     });
+    socket.on('house2SyncReqFromCloud', function(data){
+        var cloudToFogArrTime = timeGetter.nowMilli();
+        var fogDepTime = data.fogDepTime;
+        var msgIDHere = data.msgID;
+        var rtt = cloudToFogArrTime - fogDepTime;
+        var oneWayDelayFogToCloud = Math.round(rtt / 2.0);
+        var estimatedCloudArrTime = fogDepTime + oneWayDelayFogToCloud;
+
+        if(dataBean.house[1].msgID==msgIDHere){
+            dataBean.house[1].cloudArrTime = timeGetter.millToTime(estimatedCloudArrTime);
+            dbConn.insertSingleData(dataBean.house[1].msgID, 'cloudArrTime', dataBean.house[1].cloudArrTime)
+            .catch(function(err){console.log(err);});
+            socket.emit('house2SyncResFromFog', dataBean); // Send dataBean, when estimatedCloudArrTime is saved.
+        }else{
+            console.log('house2SyncReqFromCloud: msgID does not match. Error. ');
+        }
+    });
+
 });
 
 //소켓용 리스너
@@ -340,36 +370,64 @@ function setEdgeDeadTimer(houseName){
 //                                           캔 메세지 리스너
 //##########################################################################################################
 
+var house1MsgNum=0;
+var house2MsgNum=0;
+
 //CAN메세지 리스너. 1동(Edge 1)
-db.messages["House1MsgTime"].signals["sigTime"].onUpdate(function(s) {
-    dataBean.house[0].fogArrTime = timeGetter.now();
-    var milliTime = s.value;
-    dataBean.house[0].edgeDepTime = timeGetter.millToTime(milliTime);
-    dataBean.house[0].msgID = 'h1' + timeGetter.getYearMonthDate() + dataBean.house[0].edgeDepTime.substr(0,6);
-    clearTimeout(edgeDeadTimer[0]);
-    console.log('edgeDeadTimer[0] is reset.');
-    setEdgeDeadTimer('House1');
-    edgeMain("House1");
-    if(socketGlobal != 'none'){
-        dataBean.house[0].fogDepTime = timeGetter.now();
-        socketGlobal.emit('house1Msg', dataBean);
+db.messages["House1MsgNum"].signals["msgNum"].onUpdate(function(s) {
+    var fogArrTimeMilli = timeGetter.nowMilli();
+    dataBean.house[0].fogArrTime = timeGetter.millToTime(fogArrTimeMilli);
+    house1MsgNum = s.value;
+    db.messages["timeSyncReqToH1"].signals["fogTime"].update(fogArrTimeMilli);
+    db.messages["timeSyncReqToH1"].signals["msgNum"].update(house1MsgNum);
+    db.send("timeSyncReqToH1");
+});
+
+db.messages["timeSyncResH1"].signals["msgNum"].onUpdate(function(s){
+    var msgNumImsi = s.value;
+    if(house1MsgNum==msgNumImsi){
+        dataBean.house[0].edgeDepTime = timeGetter.millToTime(db.messages["timeSyncResH1"].signals["edgeDepTimeCalib"].value);
+        dataBean.house[0].msgID = 'h1' + timeGetter.getYearMonthDate() + dataBean.house[0].edgeDepTime.substr(0,6);
+        clearTimeout(edgeDeadTimer[0]);
+        console.log('edgeDeadTimer[0] is reset.');
+        setEdgeDeadTimer('House1');
+        edgeMain("House1");
+        if(socketGlobal != 'none'){
+            dataBean.house[0].fogDepTime = timeGetter.now();
+            socketGlobal.emit('house1Msg', dataBean);
+        }
     }
 });
  
 //CAN메세지 리스너. 2동(Edge 2)
-db.messages["House2MsgTime"].signals["sigTime"].onUpdate(function(s) {
-    dataBean.house[1].fogArrTime = timeGetter.now();
-    var milliTime = s.value;
-    dataBean.house[1].edgeDepTime = timeGetter.millToTime(milliTime);
-    dataBean.house[1].msgID = 'h2' + timeGetter.getYearMonthDate() + dataBean.house[1].edgeDepTime.substr(0,6);
+db.messages["House2MsgNum"].signals["msgNum"].onUpdate(function(s) {
+    console.log('House2MsgNum received. msgNum: '+s.value);
+    var fogArrTimeMilli = timeGetter.nowMilli();
+    dataBean.house[1].fogArrTime = timeGetter.millToTime(fogArrTimeMilli);
+    house2MsgNum = s.value;
+    db.messages["timeSyncReqToH2"].signals["fogTime"].update(fogArrTimeMilli);
+    db.messages["timeSyncReqToH2"].signals["msgNum"].update(house2MsgNum);
+    db.send("timeSyncReqToH2");
+});
 
-    clearTimeout(edgeDeadTimer[1]);
-    console.log('edgeDeadTimer[1] is reset.');
-    setEdgeDeadTimer('House2');
-    edgeMain("House2");
-    if(socketGlobal != 'none'){
-        dataBean.house[1].fogDepTime = timeGetter.now();
-        socketGlobal.emit('house2Msg', dataBean);
+db.messages["timeSyncResH2"].signals["msgNum"].onUpdate(function(s){
+    console.log('timeSyncResH2 received. msgNum: '+s.value);
+    var msgNumImsi = s.value;
+    if(house2MsgNum==msgNumImsi){
+        dataBean.house[1].edgeDepTime = timeGetter.millToTime(db.messages["timeSyncResH2"].signals["edgeDepTimeCalib"].value);
+        dataBean.house[1].msgID = 'h2' + timeGetter.getYearMonthDate() + dataBean.house[1].edgeDepTime.substr(0,6);
+        clearTimeout(edgeDeadTimer[1]);
+        console.log('edgeDeadTimer[1] is reset.');
+        setEdgeDeadTimer('House2');
+        edgeMain("House2");
+        if(socketGlobal != 'none'){
+            dataBean.house[1].fogDepTime = timeGetter.now();
+            socketGlobal.emit('house2Msg', dataBean);
+        }
+    }else if(house2MsgNum!=msgNumImsi){
+        console.log('house2MsgNum different. received msgNum: '+msgNumImsi);
+    }else{
+        console.log('####Error.house2MsgNum strange.');
     }
 });
 
@@ -415,14 +473,3 @@ db.messages['H2AskingByH1'].signals['nodeID'].onUpdate(function(){
     db.send('H2StateByFog');
 });
 
-db.messages['timeSyncReqH2'].signals['sigTime'].onUpdate(function(s){
-    var fogRcvTime = timeGetter.nowMilli();
-    db.messages['timeSyncResFogH2'].signals['sigTime'].update(fogRcvTime);
-    db.send('timeSyncResFogH2');
-});
-
-db.messages['timeSyncReqH1'].signals['sigTime'].onUpdate(function(s){
-    var fogRcvTime = timeGetter.nowMilli();
-    db.messages['timeSyncResFogH1'].signals['sigTime'].update(fogRcvTime);
-    db.send('timeSyncResFogH1');
-});

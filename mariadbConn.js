@@ -49,50 +49,6 @@ async function insertData(dataBean, houseNum){
     }
 }
 
-// async function insertData(dataBean){
-//     let conn;
-//     try{
-//         conn = await pool.getConnection();
-//         conn.query('Use farmData');
-//         var sql1 = 'INSERT INTO house1(msgID, edgeDepTime, fogArrTime, fogDepTime, '+
-//         'userArrTime, tarTemp, tempBand, ventilPer, temp1, temp2, temp3, '+
-//         'temp4, temp5, temp6, humid1, humid2, humid3, humid4, humid5, humid6, '+
-//         'fanMode, fan1, fan2, fan3, waterMode, water, alarm) '+
-//         'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
-//         var sql2 = 'INSERT INTO house2(msgID, edgeDepTime, fogArrTime, fogDepTime, '+
-//         'userArrTime, tarTemp, tempBand, ventilPer, temp1, temp2, temp3, '+
-//         'temp4, temp5, temp6, humid1, humid2, humid3, humid4, humid5, humid6, '+
-//         'fanMode, fan1, fan2, fan3, waterMode, water, alarm) '+
-//         'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
-        
-//         var sql = [sql1, sql2];
-//         for(i=0;i<2;i++){
-//             conn.query(sql[i],
-//                 [
-//                     dataBean.house[i].msgID,        dataBean.house[i].edgeDepTime, 
-//                     dataBean.house[i].fogArrTime,   dataBean.house[i].fogDepTime,
-//                     dataBean.house[i].userArrTime,  dataBean.house[i].tarTemp,
-//                     dataBean.house[i].tempBand,     dataBean.house[i].ventilPer,
-//                     dataBean.house[i].temp[0],      dataBean.house[i].temp[1],
-//                     dataBean.house[i].temp[2],      dataBean.house[i].temp[3],
-//                     dataBean.house[i].temp[4],      dataBean.house[i].temp[5],
-//                     dataBean.house[i].humid[0],     dataBean.house[i].humid[1],
-//                     dataBean.house[i].humid[2],     dataBean.house[i].humid[3],
-//                     dataBean.house[i].humid[4],     dataBean.house[i].humid[5],
-//                     dataBean.house[i].fanMode,      dataBean.house[i].fan[0],
-//                     dataBean.house[i].fan[1],       dataBean.house[i].fan[2],
-//                     dataBean.house[i].waterMode,    dataBean.house[i].water,
-//                     dataBean.house[i].alarm
-//                 ]
-//             );
-//         }
-//     }catch(err){
-//         console.log(err);
-//     }finally{
-//         if(conn) conn.end();
-//     }
-// }
-
 async function insertUserArrTime(msgid, userarrtime){
     var houseName = 'house' + msgid[1];
     console.log('mariadbConn.js: houseName: '+houseName);
@@ -104,6 +60,22 @@ async function insertUserArrTime(msgid, userarrtime){
         conn.query('Use farmData');
         var sql = 'UPDATE '+houseName+' SET userArrTime = ? WHERE msgID = ?';
         conn.query(sql, [userArrTime, msgID]);
+    }catch(err){
+        console.log(err);
+    }finally{
+        if(conn) conn.end();
+    }
+}
+
+async function insertSingleData(msgid, singleDataName, singleDataValue){
+    var houseName = 'house' + msgid[1];
+    console.log('mariadbConn.js: houseName: '+houseName);
+    let conn;
+    try{
+        conn = await pool.getConnection();
+        conn.query('Use farmData');
+        var sql = 'UPDATE '+houseName+' SET '+singleDataName+'=? WHERE msgID=?';
+        conn.query(sql, [singleDataValue, msgid]);
     }catch(err){
         console.log(err);
     }finally{
@@ -130,5 +102,6 @@ async function getInitialDataset(house){
 module.exports = {
     insertData: insertData,
     insertUserArrTime: insertUserArrTime,
-    getInitialDataset: getInitialDataset
+    getInitialDataset: getInitialDataset,
+    insertSingleData: insertSingleData
 };
