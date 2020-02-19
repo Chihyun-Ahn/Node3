@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>CONTROL SCREEN</title>
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <link rel="stylesheet" type="text/css" href="controlpage.css" >
+
+  <script>
+    var cloudServerAddress = 'http://223.194.33.67:10004';
+    var socket = io();
+    var currentUser;
+    const onOffString = ['OFF', 'ON'];
+    const modeString = ['자동', '수동'];
+
+    $(document).ready(function(){
+      socket.emit('userWho');
+      socket.on('userIs', (user)=>{
+        currentUser = user;
+        $('#realtimepage').attr("href", './realdata.do?user='+currentUser);
+        $('#pastdatapage').attr("href", cloudServerAddress+'/pastdatapage.do?user='+currentUser);
+        $('#controlpage').attr("href", './controlpage.do?user='+currentUser);
+        $('#loginpage').attr("href", cloudServerAddress+'/login.do');
+        $('#currentUser').html(currentUser+'님 농장');
+      });
+    });
+  </script>
+</head>
+<!-- ####################문서 바디 시작#################### -->
+<!-- ####################문서 바디 시작#################### -->
+<body>	
+  <div class="topnav">
+    <a id="realtimepage" href="#">REAL-TIME화면</a>
+    <a id="pastdatapage" href="#">과거 데이터</a>
+    <a id="controlpage" class="active" href="#">제어화면</a>
+    <a id="loginpage" href="#">로그인화면</a>
+  </div>
+  <div class="currentUser" id="currentUser">--</div>
+
+  <div class="table-title">
+    <fieldset>
+      <legend class="fieldTitle">HOUSE1</legend>
+      <div class="toggles">
+        <div class="toggle-border">
+          <input type="checkbox" id="one" />
+          <label for="one">
+              <div class="handle"></div>
+          </label>
+        </div>
+      </div>
+      <div class="switch">FAN1
+        <input type="checkbox" name="toggle">
+        <label for="toggle"><i></i></label>
+        <span></span>
+      </div>
+      <div class="switch">FAN2
+        <input type="checkbox" name="toggle">
+        <label for="toggle"><i></i></label>
+        <span></span>
+      </div>
+      <div class="switch">FAN3
+        <input type="checkbox" name="toggle">
+        <label for="toggle"><i></i></label>
+        <span></span>
+      </div>
+      <div class="switch">WATER
+        <input type="checkbox" name="toggle">
+        <label for="toggle"><i></i></label>
+        <span></span>
+      </div>
+      <div class="switch">SIREN
+        <input type="checkbox" name="toggle">
+        <label for="toggle"><i></i></label>
+        <span></span>
+      </div>
+    </fieldset> 
+    <fieldset>
+      <legend class="fieldTitle">HOUSE2</legend>
+      <div class="toggles">
+        <div class="toggle-border">
+          <input type="checkbox" id="one" />
+          <label for="one">
+              <div class="handle"></div>
+          </label>
+        </div>
+      </div>
+      <div class="switch">FAN1
+        <input type="checkbox" name="toggle">
+        <label for="toggle"><i></i></label>
+        <span></span>
+      </div>
+      <div class="switch">FAN2
+        <input type="checkbox" name="toggle">
+        <label for="toggle"><i></i></label>
+        <span></span>
+      </div>
+      <div class="switch">FAN3
+        <input type="checkbox" name="toggle">
+        <label for="toggle"><i></i></label>
+        <span></span>
+      </div>
+      <div class="switch">WATER
+        <input type="checkbox" name="toggle">
+        <label for="toggle"><i></i></label>
+        <span></span>
+      </div>
+      <div class="switch">SIREN
+        <input type="checkbox" name="toggle">
+        <label for="toggle"><i></i></label>
+        <span></span>
+      </div>
+    </fieldset> 
+  </div>  
+  </div>
+</body>
+</html>

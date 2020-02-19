@@ -13,11 +13,12 @@
   <script>
     var cloudServerAddress = 'http://223.194.33.67:10004';
     var socket = io();
-    var currentUser;
+    var currentUser, userReqTime, userResTime;
     const onOffString = ['OFF', 'ON'];
     const modeString = ['자동', '수동'];
 
     $(document).ready(function(){
+      userResTime = now();
       socket.emit('house1GraphDataReq');
       socket.emit('house2GraphDataReq');
       setInterval(function(){
@@ -26,6 +27,9 @@
       }, 11000);
       socket.on('house1GraphDataRes', function(data){
         currentUser = data.currentUser;
+        userReqTime = data.userReqTime;
+        var loginResTime = convertToMilli(userResTime)-convertToMilli(userReqTime);
+        console.log('Login response time: '+loginResTime);
         
         $('#realtimepage').attr("href", './realdata.do?user='+currentUser);
         $('#pastdatapage').attr("href", cloudServerAddress+'/pastdatapage.do?user='+currentUser);
@@ -41,16 +45,8 @@
         makeGraph('house2', dataSet);
       });
       socket.on('house1Msg', function(dataBean){
-        var arrTime = new Date();
-        dataBean.house[0].userArrTime = now(arrTime);
-        console.log('house1 msgID: '+dataBean.house[0].msgID);
-        socket.emit('userArrTimeHouse1', {
-          msgID: dataBean.house[0].msgID,
-          userArrTime: dataBean.house[0].userArrTime  
-        });
-      
+        socket.emit('userArrTimeHouse1', dataBean.house[0].msgID);
         console.log('House1 msg has arrived.');
-        console.log('House1 temp1: '+dataBean.house[0].temp[0]);
         $('#h1t1').html(dataBean.house[0].temp[0]);
         $('#h1t2').html(dataBean.house[0].temp[1]);
         $('#h1t3').html(dataBean.house[0].temp[2]);
@@ -83,16 +79,8 @@
 
       });
       socket.on('house2Msg', function(dataBean){
-        var arrTime = new Date();
-        dataBean.house[1].userArrTime = now(arrTime);
-
-        socket.emit('userArrTimeHouse2', {
-          msgID: dataBean.house[1].msgID,
-          userArrTime: dataBean.house[1].userArrTime      
-        });
-
+        socket.emit('userArrTimeHouse2', dataBean.house[1].msgID);
         console.log('House2 msg has arrived.');
-        console.log(dataBean.house[1].temp[0]);
         $('#h2t1').html(dataBean.house[1].temp[0]);
         $('#h2t2').html(dataBean.house[1].temp[1]);
         $('#h2t3').html(dataBean.house[1].temp[2]);
@@ -121,7 +109,15 @@
         $('#h2alarm').html(onOffString[dataBean.house[1].alarm]);
         $('#h2farmstate').html(dataBean.house[1].state);
       });
-      
+      $('#realPageUserReqBtn').click(function(){
+        var realPageUserReq = now();
+        socket.emit('realPageUserReq', realPageUserReq);
+      });
+      socket.on('realPageUserRes', function(realPageUserReq){
+        var realPageUserRes = now();
+        var realPageUserResTime = convertToMilli(realPageUserRes)-convertToMilli(realPageUserReq);
+        console.log('Realtime page response time: '+realPageUserResTime);
+      });
     }); // $(document).ready(function{}) 닫힘
 
 // ##################### 그래프 만들기 함수 ############################
@@ -239,8 +235,41 @@
     }
 
 // ##################### 그래프 만들기 함수 끝 ############################
-// ##################### 그래프 만들기 함수 끝 ############################
+// ##################### timeConvert 함수    ############################
+    function convertToMilli(time){
+        var hour = parseInt(time.substr(0,2));
+        var min = parseInt(time.substr(2,2));
+        var sec = parseInt(time.substr(4,2));
+        var milsec = parseInt(time.substr(6,3));
+
+        var hourToMilli = hour*60*60*1000;
+        var minToMilli = min*60*1000;
+        var secToMilli = sec*1000;
+
+        var result = hourToMilli+minToMilli+secToMilli+milsec;
+        return result;
+    }
+    function nowMilli(){
+        var date = new Date();
+        var h = date.getHours()*3600000;
+        var m = date.getMinutes()*60000;
+        var s = date.getSeconds()*1000;
+        var mi = date.getMilliseconds();
+        result = h+m+s+mi;
+        return result;
+    }
+
     function now(date){
+      var hours = addZero(date.getHours());
+      var mins = addZero(date.getMinutes());
+      var secs = addZero(date.getSeconds());
+      var millis = addZeroMilli(date.getMilliseconds());
+      var timeSum = hours+mins+secs+millis;
+      return timeSum;
+    }
+
+    function now(){
+      var date = new Date();
       var hours = addZero(date.getHours());
       var mins = addZero(date.getMinutes());
       var secs = addZero(date.getSeconds());
@@ -282,6 +311,7 @@
   <div class="currentUser" id="currentUser">--</div>
   <div class="table-title">
     <h3>HOUSE1</h3>
+    <button type="button" id="realPageUserReqBtn" onClick="">Response time check</button>
   </div>
   <!-- ####################################### 1동 테이블 ######################################-->
   <!-- ####################################### 1동 테이블 ######################################-->

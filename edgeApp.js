@@ -52,6 +52,7 @@ const HIGH = 1;
 const LOW = 0;
 var commState = [HIGH, HIGH, HIGH];
 var currentUser = 'none';
+var userReqTime = 0;
 //commState[0]: H1Fog, [1]: H2Fog, [2]: H1H2
 
 //소켓캔 채널 스타트
@@ -78,10 +79,17 @@ socketApp.get('/', function(req,res){
 
 socketApp.get('/realdata.do', function(req, res){
     res.setHeader('Access-Control-Allow-Origin', '*');
-    console.log('Entered /realdata.do');
     console.log('/realdata.do: '+req.query.user);
     currentUser = req.query.user;
+    userReqTime = req.query.userLoginClickTime;
     res.sendFile(path.join(__dirname,'views','realtimepage.html'));
+});
+
+socketApp.get('/controlpage.do', function(req, res){
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    console.log('/controlpage.do: '+req.query.user);
+    currentUser = req.query.user;
+    res.sendFile(path.join(__dirname,'views','controlpage.html'));
 });
 
 socketApp.get('test.do', function(req, res){
@@ -131,6 +139,9 @@ socketApp.post('/setData.do', function(req,res){
 io.on('connection', function(socket){
     socketGlobal = socket;
     console.log('Socket.io: user connected. CurrentUser: '+currentUser);
+    socket.on('userWho', ()=>{
+        socket.emit('userIs', currentUser);
+    });
     socket.on('disconnect', function(){
         console.log('User '+currentUser+' disconnected.');
     });
@@ -140,7 +151,7 @@ io.on('connection', function(socket){
             (err)=>{console.log(err)}
         ).then(
             (result)=>{
-                socket.emit('house1GraphDataRes', {result,currentUser});        
+                socket.emit('house1GraphDataRes', {result,currentUser, userReqTime});        
             }
         );
     });
@@ -154,25 +165,37 @@ io.on('connection', function(socket){
             }
         );
     });
-    socket.on('userArrTimeHouse1', function(data){
-        var msgid = data.msgID;
-        console.log('userArrTimeHouse1, msgid: '+msgid);
-        var userarrtime = data.userArrTime;
-        dbConn.insertUserArrTime(msgid, userarrtime).catch(
-            (err) =>{
-                console.log(err);
-            }
-        );
+    socket.on('userArrTimeHouse1', function(msgid){
+        var userToFogArrTimeMilli = timeGetter.nowMilli(); 
+        var fogDepTimeMilli = timeGetter.convertToMilli(dataBean.house[0].fogDepTime);
+        if(dataBean.house[0].msgID==msgid){
+            // console.log('userArrTimeHouse1 receivd. fogDepTimeMilli: '+fogDepTimeMilli);
+            var rtt = userToFogArrTimeMilli - fogDepTimeMilli;
+            var oneWayDelay = Math.round((rtt / 2.0));
+            var estimatedUserArrTime = fogDepTimeMilli + oneWayDelay;
+            dataBean.house[0].userArrTime = timeGetter.millToTime(estimatedUserArrTime);
+            // console.log('edtimatedUAT: '+estimatedUserArrTime+' OWD: '+oneWayDelay+' userArrTime: '+dataBean.house[0].userArrTime);
+            dbConn.insertUserArrTime(msgid, dataBean.house[0].userArrTime).catch(
+                (err) =>{
+                    console.log(err);
+                }
+            );
+        }
     });
-    socket.on('userArrTimeHouse2', function(data){
-        var msgid = data.msgID;
-        console.log('userArrTimeHouse2, msgid: '+msgid);
-        var userarrtime = data.userArrTime;
-        dbConn.insertUserArrTime(msgid, userarrtime).catch(
-            (err) =>{
-                console.log(err);
-            }
-        );
+    socket.on('userArrTimeHouse2', function(msgid){
+        var userToFogArrTimeMilli = timeGetter.nowMilli(); 
+        var fogDepTimeMilli = timeGetter.convertToMilli(dataBean.house[1].fogDepTime);
+        if(dataBean.house[1].msgID==msgid){
+            var rtt = userToFogArrTimeMilli - fogDepTimeMilli;
+            var oneWayDelay = Math.round((rtt / 2.0));
+            var estimatedUserArrTime = fogDepTimeMilli + oneWayDelay;
+            dataBean.house[1].userArrTime = timeGetter.millToTime(estimatedUserArrTime);
+            dbConn.insertUserArrTime(msgid, dataBean.house[1].userArrTime).catch(
+                (err) =>{
+                    console.log(err);
+                }
+            );
+        }
     });
     socket.on('house1SyncReqFromCloud', function(data){
         var cloudToFogArrTime = timeGetter.nowMilli();
@@ -208,7 +231,9 @@ io.on('connection', function(socket){
             console.log('house2SyncReqFromCloud: msgID does not match. Error. ');
         }
     });
-
+    socket.on('realPageUserReq', function(realPageUserReq){
+        socket.emit('realPageUserRes', realPageUserReq);
+    });
 });
 
 //소켓용 리스너

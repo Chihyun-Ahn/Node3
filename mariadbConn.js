@@ -94,7 +94,7 @@ async function getGraphDataset(house){
         console.log(err);
     }finally{
         if(conn) conn.end();
-        console.log(result[0].temp1);
+        // console.log(result[0].temp1);
         return result;
     }
 }
