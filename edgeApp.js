@@ -92,10 +92,6 @@ socketApp.get('/controlpage.do', function(req, res){
     res.sendFile(path.join(__dirname,'views','controlpage.html'));
 });
 
-socketApp.get('test.do', function(req, res){
-    console.log('#####################');
-});
-
 //사용자가 getData.do 요청을 보내면, 응답으로 데이터빈을 보냄. 
 socketApp.post('/getData.do', function(req,res){
     console.log('getData.do request received.');
@@ -231,8 +227,8 @@ io.on('connection', function(socket){
             console.log('house2SyncReqFromCloud: msgID does not match. Error. ');
         }
     });
-    socket.on('realPageUserReq', function(realPageUserReq){
-        socket.emit('realPageUserRes', realPageUserReq);
+    socket.on('realPageUserReq', function(realPageUserReqTime){
+        socket.emit('realPageUserRes', realPageUserReqTime);
     });
 });
 
@@ -248,7 +244,7 @@ socketApp.post('/cloudRequest.do', function(req,res){
 });
 
 //##########################################################################################################
-//                                      주요 함수 및 메인 기능
+//                    주요 함수 및 메인 기능
 //##########################################################################################################
 
 // CAN리스너에서, 메세지를 받을 때마다, 호출할 메인 함수. 

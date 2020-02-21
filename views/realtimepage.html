@@ -110,13 +110,13 @@
         $('#h2farmstate').html(dataBean.house[1].state);
       });
       $('#realPageUserReqBtn').click(function(){
-        var realPageUserReq = now();
-        socket.emit('realPageUserReq', realPageUserReq);
+        var realPageUserReqTime = now();
+        socket.emit('realPageUserReq', realPageUserReqTime);
       });
-      socket.on('realPageUserRes', function(realPageUserReq){
-        var realPageUserRes = now();
-        var realPageUserResTime = convertToMilli(realPageUserRes)-convertToMilli(realPageUserReq);
-        console.log('Realtime page response time: '+realPageUserResTime);
+      socket.on('realPageUserRes', function(realPageUserReqTime){
+        var realPageUserResTime = now();
+        var realPageUserResTimeCalc = convertToMilli(realPageUserResTime)-convertToMilli(realPageUserReqTime);
+        console.log('Realtime page response time: '+realPageUserResTimeCalc);
       });
     }); // $(document).ready(function{}) 닫힘
 

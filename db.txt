@@ -117,3 +117,13 @@ ALTER TABLE house2 MODIFY edgeDepTime VARCHAR(10);
 ALTER TABLE house2 MODIFY fogArrTime VARCHAR(10);
 ALTER TABLE house2 MODIFY fogDepTime VARCHAR(10);
 ALTER TABLE house2 MODIFY userArrTime VARCHAR(10);
+
+SELECT 
+table_name,
+table_rows,
+round(data_length/(1024*1024),2) as 'DATA_SIZE(MB)',
+round(index_length/(1024*1024),2) as 'INDEX_SIZE(MB)'
+FROM information_schema.TABLES 
+WHERE table_schema = 'farmData'
+GROUP BY table_name
+ORDER BY data_length DESC LIMIT 10;
