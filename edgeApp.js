@@ -21,8 +21,7 @@ var timesyncServer = require('timesync/server');
 //소켓 만들기
 var http = require('http').Server(socketApp);
 var io = require('socket.io')(http);
-var socketGlobal = 'none';
-
+var socketGlobal = 'none'
 // var http2 = require('http').
 
 //전역 변수로 데이터빈 객체 사용
@@ -233,6 +232,13 @@ io.on('connection', function(socket){
     });
     socket.on('realPageUserReq', function(realPageUserReqTime){
         socket.emit('realPageUserRes', realPageUserReqTime);
+    });
+    socket.on('resTimeTestReq', function(resTimeTestReq){
+        socket.emit('resTimeTestRes', resTimeTestReq);
+    });
+    socket.on('resTimeTestSave', function(resTimeTestResult){
+        var currentTime = timeGetter.now();
+        
     });
 });
 

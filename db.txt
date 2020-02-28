@@ -127,3 +127,24 @@ FROM information_schema.TABLES
 WHERE table_schema = 'farmData'
 GROUP BY table_name
 ORDER BY data_length DESC LIMIT 10;
+
+CREATE TABLE responseTime(
+    num             INT PRIMARY KEY AUTO_INCREMENT,
+    currentTime     VARCHAR(10),
+    responseTime    VARCHAR(8)
+);
+
+sudo mysql -u root -p
+
+
+
+use farmData;
+
+DELETE FROM house1;
+DELETE FROM house2;
+DELETE FROM responseTime;
+
+ALTER TABLE house1 AUTO_INCREMENT = 1;
+ALTER TABLE house2 AUTO_INCREMENT = 1;
+ALTER TABLE responseTime AUTO_INCREMENT = 1;
+commit;

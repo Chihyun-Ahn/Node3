@@ -99,9 +99,25 @@ async function getGraphDataset(house){
     }
 }
 
+async function insertResponseTime(resTimeTestResult, currentTime){
+    let conn;
+    var sql = 'INSERT INTO responseTime(currentTime, responseTime) '+
+                'VALUES(?,?)';
+    try{
+        conn = await pool.getConnection();
+        conn.query('use farmData');
+        conn.query(sql, [currentTime, resTimeTestResult]);
+    }catch(err){
+        console.log(err);
+    }finally{
+        if(conn) conn.end();
+    }
+}
+
 module.exports = {
     insertData: insertData,
     insertUserArrTime: insertUserArrTime,
     getGraphDataset: getGraphDataset,
-    insertSingleData: insertSingleData
+    insertSingleData: insertSingleData,
+    insertResponseTime:insertResponseTime
 };
