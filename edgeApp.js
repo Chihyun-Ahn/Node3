@@ -81,7 +81,11 @@ socketApp.get('/realdata.do', function(req, res){
     res.setHeader('Access-Control-Allow-Origin', '*');
     console.log('/realdata.do: '+req.query.user);
     currentUser = req.query.user;
-    userReqTime = req.query.userLoginClickTime;
+    if(req.query.userLoginClickTime != null){
+        userReqTime = req.query.userLoginClickTime;
+    }else if(req.query.userLoginClickTime == null){
+        userReqTime = 'none';
+    }
     res.sendFile(path.join(__dirname,'views','realtimepage.html'));
 });
 
