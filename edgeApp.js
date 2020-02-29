@@ -238,7 +238,8 @@ io.on('connection', function(socket){
     });
     socket.on('resTimeTestSave', function(resTimeTestResult){
         var currentTime = timeGetter.now();
-        
+        dbConn.insertResponseTime(resTimeTestResult, currentTime).
+            catch((err)=>{console.log(err)});
     });
 });
 
@@ -426,6 +427,8 @@ db.messages["timeSyncResH1"].signals["msgNum"].onUpdate(function(s){
         if(socketGlobal != 'none'){
             dataBean.house[0].fogDepTime = timeGetter.now();
             socketGlobal.emit('house1Msg', dataBean);
+        }else{
+            console.log('socketGlobal is not connected.');
         }
     }
 });

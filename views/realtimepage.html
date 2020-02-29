@@ -125,10 +125,10 @@
         iteration += 1;
         var resTimeTestReq = now();
         socket.emit('resTimeTestReq', resTimeTestReq);
-        if(iteration == 1000){
+        if(iteration == 100){
           clearInterval(responseTimeTest);
         }
-      }, 2000);
+      }, 5000);
       socket.on('resTimeTestRes', function(resTimeTestReq){
         var resTimeTestRes = now();
         var resTimeTestResult = convertToMilli(resTimeTestRes) - convertToMilli(resTimeTestReq);
