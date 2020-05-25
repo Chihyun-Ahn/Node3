@@ -121,8 +121,7 @@ ALTER TABLE house2 MODIFY userArrTime VARCHAR(10);
 SELECT 
 table_name,
 table_rows,
-round(data_length/(1024*1024),2) as 'DATA_SIZE(MB)',
-round(index_length/(1024*1024),2) as 'INDEX_SIZE(MB)'
+round(data_length/(1024*1024),2) as 'DATA_SIZE(MB)'
 FROM information_schema.TABLES 
 WHERE table_schema = 'farmData'
 GROUP BY table_name
@@ -136,6 +135,40 @@ CREATE TABLE responseTime(
 
 sudo mysql -u root -p
 
++--------------+------------+---------------+----------------+
+| table_name   | table_rows | DATA_SIZE(MB) | INDEX_SIZE(MB) |
++--------------+------------+---------------+----------------+
+| house1       |       8578 |          1.52 |           0.00 |
+| house2       |       8578 |          1.52 |           0.00 |
+| responseTime |          0 |          0.02 |           0.00 |
+| testtable    |          5 |          0.02 |           0.00 |
++--------------+------------+---------------+----------------+
+4 rows in set (0.003 sec)
+
++-----------------+------------+---------------+----------------+
+| table_name      | table_rows | DATA_SIZE(MB) | INDEX_SIZE(MB) |
++-----------------+------------+---------------+----------------+
+| house2          |       1339 |          0.14 |           0.00 |
+| house1          |       1343 |          0.14 |           0.00 |
+| identification  |          5 |          0.02 |           0.00 |
+| house2CloudOnly |          0 |          0.02 |           0.00 |
+| house1CloudOnly |          0 |          0.02 |           0.00 |
+| responseTime    |          0 |          0.02 |           0.00 |
++-----------------+------------+---------------+----------------+
+
+    -> ORDER BY data_length DESC LIMIT 10;
+
++-----------------+------------+---------------+
+| table_name      | table_rows | DATA_SIZE(MB) |
++-----------------+------------+---------------+
+| house2          |       1339 |          0.14 |
+| house1          |       1346 |          0.14 |
+| identification  |          5 |          0.02 |
+| house2CloudOnly |          0 |          0.02 |
+| house1CloudOnly |          0 |          0.02 |
+| responseTime    |          0 |          0.02 |
++-----------------+------------+---------------+
+
 
 
 use farmData;
@@ -148,3 +181,14 @@ ALTER TABLE house1 AUTO_INCREMENT = 1;
 ALTER TABLE house2 AUTO_INCREMENT = 1;
 ALTER TABLE responseTime AUTO_INCREMENT = 1;
 commit;
+
+SELECT * FROM responseTime 
+    INTO OUTFILE 'responseTime.csv' 
+    CHARACTER SET euckr 
+    FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' 
+    ESCAPED BY '\\' 
+    LINES TERMINATED BY '\n';
+
+
+
+
